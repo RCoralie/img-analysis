@@ -33,7 +33,8 @@ include(CTest)
 ################################################################################
 #SOURCES
 
-file(GLOB_RECURSE SOURCE_FILES "src/*.cpp")
+file(GLOB_RECURSE SRC_SHARED "src/Shared/*.cpp")
+file(GLOB_RECURSE SRC_GRID_REC "src/PatternRecognition/Grid/*.cpp")
 
 ################################################################################
 #LINK
@@ -55,3 +56,15 @@ link_libraries(stdc++fs)
 
 ################################################################################
 #EXECUTABLE
+
+add_executable(Demo_DFT ${SRC_SHARED} src/Demo_DFT.cpp)
+target_link_libraries(Demo_DFT ${LINK_LIBS})
+
+add_executable(Demo_FrequencyForPatternRecognition ${SRC_SHARED} src/Demo_FrequencyForPatternRecognition.cpp)
+target_link_libraries(Demo_FrequencyForPatternRecognition ${LINK_LIBS})
+
+add_executable(Demo_GridDetectionByDimensionsReduction ${SRC_SHARED} ${SRC_GRID_REC} src/Demo_GridDetectionByDimensionsReduction.cpp)
+target_link_libraries(Demo_GridDetectionByDimensionsReduction ${LINK_LIBS})
+
+add_executable(Demo_GridDetection  ${SRC_SHARED} ${SRC_GRID_REC} src/Demo_GridDetection.cpp)
+target_link_libraries(Demo_GridDetection ${LINK_LIBS})
