@@ -34,6 +34,7 @@ include(CTest)
 #SOURCES
 
 file(GLOB_RECURSE SRC_REGISTRATION "src/Filter/*.cpp" "src/ImageRegistration/*.cpp")
+file(GLOB_RECURSE SRC_EDGE_DETECT "src/Filter/*.cpp" "src/EdgeDetector/*.cpp")
 
 ################################################################################
 #LINK
@@ -63,3 +64,6 @@ target_link_libraries(Demo_Registration ${LINK_LIBS})
 
 add_executable(Compare_ShiftRegistration ${SRC_REGISTRATION} src/Compare_ShiftRegistration.cpp)
 target_link_libraries(Compare_ShiftRegistration ${LINK_LIBS})
+
+add_executable(Demo_EdgeDetector ${SRC_EDGE_DETECT} src/Demo_EdgeDetector.cpp)
+target_link_libraries(Demo_EdgeDetector ${LINK_LIBS})
