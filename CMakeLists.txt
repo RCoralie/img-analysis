@@ -33,7 +33,7 @@ include(CTest)
 ################################################################################
 #SOURCES
 
-file(GLOB_RECURSE SOURCE_FILES "src/*.cpp")
+file(GLOB_RECURSE SRC_REGISTRATION "src/Filter/*.cpp" "src/ImageRegistration/*.cpp")
 
 ################################################################################
 #LINK
@@ -55,3 +55,6 @@ link_libraries(stdc++fs)
 
 ################################################################################
 #EXECUTABLE
+
+add_executable(Demo_RegistrationFB ${SRC_REGISTRATION} src/Demo_ImageRegistration_FeaturesBased.cpp)
+target_link_libraries(Demo_RegistrationFB ${LINK_LIBS})
