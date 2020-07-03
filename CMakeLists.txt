@@ -58,3 +58,6 @@ link_libraries(stdc++fs)
 
 add_executable(Demo_RegistrationFB ${SRC_REGISTRATION} src/Demo_ImageRegistration_FeaturesBased.cpp)
 target_link_libraries(Demo_RegistrationFB ${LINK_LIBS})
+
+add_executable(Demo_RegistrationECC ${SRC_REGISTRATION} src/Demo_ImageRegistration_ECC.cpp)
+target_link_libraries(Demo_RegistrationECC ${LINK_LIBS})
