@@ -4,7 +4,7 @@
 
 using namespace std;
 using namespace cv;
-using namespace registration;
+using namespace registration::featuresbased;
 
 int main(int argc, char **argv) {
   if (argc < 3) {
@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  FeaturesDescription desc = ORB_ALGO;
+  FeatureDetectorDescriptor desc = ORB_ALGO;
   MotionModel model = AFFINE;
 
   // Print estimated homography
