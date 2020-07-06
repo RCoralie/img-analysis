@@ -117,14 +117,16 @@ namespace registration {
       // 1 & 2 & 3 - Detect keypoints, compute descriptors and match features
       MatchFeatures matchFeatures = findMatchFeatures(im1, im2, config);
 
+      int method = (config.featuresMatching == LMEDS_METHOD) ? LMEDS : RANSAC;
+
       // 4 - Estimate motion model transformation using robust method (RANSAC-based robust method or Least-Median robust method RANSAC)
       switch (config.model) {
       case AFFINE:
-        return estimateAffine2D(matchFeatures.sensedImgFeatures.bestMatchPts, matchFeatures.refImgFeatures.bestMatchPts);
+        return estimateAffine2D(matchFeatures.sensedImgFeatures.bestMatchPts, matchFeatures.refImgFeatures.bestMatchPts, noArray(), method);
       case AFFINE_PARTIAL:
-        return estimateAffinePartial2D(matchFeatures.sensedImgFeatures.bestMatchPts, matchFeatures.refImgFeatures.bestMatchPts);
+        return estimateAffinePartial2D(matchFeatures.sensedImgFeatures.bestMatchPts, matchFeatures.refImgFeatures.bestMatchPts, noArray(), method);
       default:
-        return findHomography(matchFeatures.sensedImgFeatures.bestMatchPts, matchFeatures.refImgFeatures.bestMatchPts, RANSAC);
+        return findHomography(matchFeatures.sensedImgFeatures.bestMatchPts, matchFeatures.refImgFeatures.bestMatchPts, method);
       }
     }
 
