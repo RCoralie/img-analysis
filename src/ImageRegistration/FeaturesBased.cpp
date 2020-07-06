@@ -78,7 +78,8 @@ namespace registration {
     }
   } // namespace
 
-  void featuresBasedRegistration(const Mat &im1, const Mat &im2, Mat &im1Reg, Mat &h, Mat &imMatches, FeaturesDescription algoToUse) {
+  // ---------------------------------------------------------------------------
+  MatchFeatures findMatchFeatures(const Mat &im1, const Mat &im2, FeaturesDescription algoToUse) {
 
     // Convert images to work on grayscale images
     Mat im1Gray, im2Gray;
@@ -86,34 +87,66 @@ namespace registration {
     cvtColor(im2, im2Gray, COLOR_RGB2GRAY);
 
     // 1 & 2 - Detect keypoints and compute descriptors
-    std::vector<KeyPoint> keypoints1, keypoints2;
-    Mat descriptors1, descriptors2;
+    struct ImgFeatures refImg = {vector<Point2f>(), vector<KeyPoint>(), Mat()};
+    struct ImgFeatures sensedImg = {vector<Point2f>(), vector<KeyPoint>(), Mat()};
     if (algoToUse == AKAZE_ALGO) {
-      AKAZEFeatureDescription(im1Gray, im2Gray, keypoints1, keypoints2, descriptors1, descriptors2);
+      AKAZEFeatureDescription(im1Gray, im2Gray, refImg.keypoints, sensedImg.keypoints, refImg.descriptors, sensedImg.descriptors);
     } else {
-      ORBFeatureDescription(im1Gray, im2Gray, keypoints1, keypoints2, descriptors1, descriptors2);
+      ORBFeatureDescription(im1Gray, im2Gray, refImg.keypoints, sensedImg.keypoints, refImg.descriptors, sensedImg.descriptors);
     }
     // 3- Match features
     std::vector<DMatch> matches;
-    BruteForceHammingMatcher(descriptors1, descriptors2, matches);
+    BruteForceHammingMatcher(refImg.descriptors, sensedImg.descriptors, matches);
     // sort matches by score
     std::sort(matches.begin(), matches.end());
     // remove not so good matches
     const int numGoodMatches = matches.size() * GOOD_MATCH_PERCENT;
     matches.erase(matches.begin() + numGoodMatches, matches.end());
     // extract location of good matches
-    std::vector<Point2f> points1, points2;
     for (size_t i = 0; i < matches.size(); i++) {
-      points1.push_back(keypoints1[matches[i].queryIdx].pt);
-      points2.push_back(keypoints2[matches[i].trainIdx].pt);
+      refImg.bestMatchPts.push_back(refImg.keypoints[matches[i].queryIdx].pt);
+      sensedImg.bestMatchPts.push_back(sensedImg.keypoints[matches[i].trainIdx].pt);
     }
 
-    // 3 - Estimate homography transformation using RANSAC and use it to warp image
-    h = findHomography(points1, points2, RANSAC);
-    warpPerspective(im1, im1Reg, h, im2.size());
+    struct MatchFeatures matchFeatures = {refImg, sensedImg, Mat()};
 
     // OPTIONAL : store top matches (vizualization purpose)
-    drawMatches(im1, keypoints1, im2, keypoints2, matches, imMatches);
+    drawMatches(im1, refImg.keypoints, im2, sensedImg.keypoints, matches, matchFeatures.imgOfMatches);
+
+    return matchFeatures;
+  }
+
+  // ---------------------------------------------------------------------------
+  Mat findTransformationMatrix(const Mat &im1, const Mat &im2, FeaturesDescription algoToUse, MotionModel model) {
+
+    // 1 & 2 & 3 - Detect keypoints, compute descriptors and match features
+    MatchFeatures matchFeatures = findMatchFeatures(im1, im2, algoToUse);
+
+    // 4 - Estimate motion model transformation using robust method (RANSAC-based robust method or Least-Median robust method RANSAC)
+    switch (model) {
+    case AFFINE:
+      return estimateAffine2D(matchFeatures.sensedImgFeatures.bestMatchPts, matchFeatures.refImgFeatures.bestMatchPts);
+    case AFFINE_PARTIAL:
+      return estimateAffinePartial2D(matchFeatures.sensedImgFeatures.bestMatchPts, matchFeatures.refImgFeatures.bestMatchPts);
+    default:
+      return findHomography(matchFeatures.sensedImgFeatures.bestMatchPts, matchFeatures.refImgFeatures.bestMatchPts, RANSAC);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  Mat featuresBasedRegistration(const Mat &im1, const Mat &im2, FeaturesDescription algoToUse, MotionModel model) {
+
+    // Estimate motion model transformation
+    Mat transformation = findTransformationMatrix(im1, im2, algoToUse, model);
+
+    // Use motion model to warp sensed image
+    Mat imgRegistered;
+    if (model == AFFINE || model == AFFINE_PARTIAL) {
+      warpAffine(im2, imgRegistered, transformation, im1.size());
+    } else {
+      warpPerspective(im2, imgRegistered, transformation, im1.size());
+    }
+    return imgRegistered;
   }
 
 } // namespace registration

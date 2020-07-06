@@ -26,13 +26,21 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  // Align images
-  cout << "Process ..." << endl;
-  Mat imReg, h, imMatches;
-  featuresBasedRegistration(im, imReference, imReg, h, imMatches, ORB_ALGO);
+  FeaturesDescription desc = ORB_ALGO;
+  MotionModel model = AFFINE;
 
   // Print estimated homography
-  cout << "Estimated homography : \n" << h << endl;
+  cout << ">> Process matches ..." << endl;
+  MatchFeatures matchFeatures = findMatchFeatures(imReference, im, desc);
+
+  // Print estimated homography
+  cout << ">> Process transformation matrix ..." << endl;
+  Mat h = findTransformationMatrix(imReference, im, desc, model);
+  cout << "Estimated motion model matrix : \n" << h << endl;
+
+  // Align images
+  cout << ">> Process image alignment ..." << endl;
+  Mat imReg = featuresBasedRegistration(imReference, im, desc, model);
 
   // Display results
   cv::namedWindow("Reference image", cv::WINDOW_GUI_NORMAL);
@@ -53,14 +61,14 @@ int main(int argc, char **argv) {
   cv::namedWindow("Matches", cv::WINDOW_GUI_NORMAL);
   cv::resizeWindow("Matches", 1200, 500);
   cv::moveWindow("Matches", 100, 400);
-  cv::imshow("Matches", imMatches);
+  cv::imshow("Matches", matchFeatures.imgOfMatches);
 
   cv::waitKey(0);
 
   // Store results
   // string outFilename("matches.jpg");
   // cout << "Saving matches vizualisation : " << outFilename << endl;
-  // imwrite(outFilename, imMatches);
+  // imwrite(outFilename, matchFeatures.imgOfMatches);
   //
   // string outFilename2("aligned.jpg");
   // cout << "Saving aligned image : " << outFilename2 << endl;
