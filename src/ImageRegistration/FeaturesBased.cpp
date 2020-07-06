@@ -20,9 +20,6 @@ using namespace std;
 using namespace cv;
 using namespace cv::xfeatures2d;
 
-const int MAX_FEATURES = 500;
-const float GOOD_MATCH_PERCENT = 0.15f;
-
 namespace registration {
 
   namespace featuresbased {
@@ -39,8 +36,8 @@ namespace registration {
        * @param descriptors2 - descriptors of the sensed image
        */
       void ORBFeatureDescription(const Mat &im1, const Mat &im2, vector<KeyPoint> &kpts1, vector<KeyPoint> &kpts2, Mat &descriptors1,
-                                 Mat &descriptors2) {
-        Ptr<Feature2D> orb = ORB::create(MAX_FEATURES);
+                                 Mat &descriptors2, FBConfig config) {
+        Ptr<Feature2D> orb = ORB::create(config.maxFeatures);
         orb->detectAndCompute(im1, Mat(), kpts1, descriptors1);
         orb->detectAndCompute(im2, Mat(), kpts2, descriptors2);
       }
@@ -77,7 +74,7 @@ namespace registration {
     } // namespace
 
     // ---------------------------------------------------------------------------
-    MatchFeatures findMatchFeatures(const Mat &im1, const Mat &im2, FeatureDetectorDescriptor algoToUse) {
+    MatchFeatures findMatchFeatures(const Mat &im1, const Mat &im2, FBConfig config) {
 
       // Convert images to work on grayscale images
       Mat im1Gray, im2Gray;
@@ -87,10 +84,10 @@ namespace registration {
       // 1 & 2 - Detect keypoints and compute descriptors
       struct ImgFeatures refImg = {vector<Point2f>(), vector<KeyPoint>(), Mat()};
       struct ImgFeatures sensedImg = {vector<Point2f>(), vector<KeyPoint>(), Mat()};
-      if (algoToUse == AKAZE_ALGO) {
+      if (config.detectorDescriptor == AKAZE_ALGO) {
         AKAZEFeatureDescription(im1Gray, im2Gray, refImg.keypoints, sensedImg.keypoints, refImg.descriptors, sensedImg.descriptors);
       } else {
-        ORBFeatureDescription(im1Gray, im2Gray, refImg.keypoints, sensedImg.keypoints, refImg.descriptors, sensedImg.descriptors);
+        ORBFeatureDescription(im1Gray, im2Gray, refImg.keypoints, sensedImg.keypoints, refImg.descriptors, sensedImg.descriptors, config);
       }
       // 3- Match features
       std::vector<DMatch> matches;
@@ -98,7 +95,7 @@ namespace registration {
       // sort matches by score
       std::sort(matches.begin(), matches.end());
       // remove not so good matches
-      const int numGoodMatches = matches.size() * GOOD_MATCH_PERCENT;
+      const int numGoodMatches = matches.size() * config.GoodMatchPercent;
       matches.erase(matches.begin() + numGoodMatches, matches.end());
       // extract location of good matches
       for (size_t i = 0; i < matches.size(); i++) {
@@ -115,13 +112,13 @@ namespace registration {
     }
 
     // ---------------------------------------------------------------------------
-    Mat findTransformationMatrix(const Mat &im1, const Mat &im2, FeatureDetectorDescriptor algoToUse, MotionModel model) {
+    Mat findTransformationMatrix(const Mat &im1, const Mat &im2, FBConfig config) {
 
       // 1 & 2 & 3 - Detect keypoints, compute descriptors and match features
-      MatchFeatures matchFeatures = findMatchFeatures(im1, im2, algoToUse);
+      MatchFeatures matchFeatures = findMatchFeatures(im1, im2, config);
 
       // 4 - Estimate motion model transformation using robust method (RANSAC-based robust method or Least-Median robust method RANSAC)
-      switch (model) {
+      switch (config.model) {
       case AFFINE:
         return estimateAffine2D(matchFeatures.sensedImgFeatures.bestMatchPts, matchFeatures.refImgFeatures.bestMatchPts);
       case AFFINE_PARTIAL:
@@ -132,14 +129,14 @@ namespace registration {
     }
 
     // ---------------------------------------------------------------------------
-    Mat featuresBasedRegistration(const Mat &im1, const Mat &im2, FeatureDetectorDescriptor algoToUse, MotionModel model) {
+    Mat featuresBasedRegistration(const Mat &im1, const Mat &im2, FBConfig config) {
 
       // Estimate motion model transformation
-      Mat transformation = findTransformationMatrix(im1, im2, algoToUse, model);
+      Mat transformation = findTransformationMatrix(im1, im2, config);
 
       // Use motion model to warp sensed image
       Mat imgRegistered;
-      if (model == AFFINE || model == AFFINE_PARTIAL) {
+      if (config.model == AFFINE || config.model == AFFINE_PARTIAL) {
         warpAffine(im2, imgRegistered, transformation, im1.size());
       } else {
         warpPerspective(im2, imgRegistered, transformation, im1.size());

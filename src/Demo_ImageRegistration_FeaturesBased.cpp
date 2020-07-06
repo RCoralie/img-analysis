@@ -26,21 +26,20 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  FeatureDetectorDescriptor desc = ORB_ALGO;
-  MotionModel model = AFFINE;
+  FBConfig config;
 
   // Print estimated homography
   cout << ">> Process matches ..." << endl;
-  MatchFeatures matchFeatures = findMatchFeatures(imReference, im, desc);
+  MatchFeatures matchFeatures = findMatchFeatures(imReference, im, config);
 
   // Print estimated homography
   cout << ">> Process transformation matrix ..." << endl;
-  Mat h = findTransformationMatrix(imReference, im, desc, model);
+  Mat h = findTransformationMatrix(imReference, im, config);
   cout << "Estimated motion model matrix : \n" << h << endl;
 
   // Align images
   cout << ">> Process image alignment ..." << endl;
-  Mat imReg = featuresBasedRegistration(imReference, im, desc, model);
+  Mat imReg = featuresBasedRegistration(imReference, im, config);
 
   // Display results
   cv::namedWindow("Reference image", cv::WINDOW_GUI_NORMAL);

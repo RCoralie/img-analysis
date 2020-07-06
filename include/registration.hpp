@@ -13,8 +13,8 @@ namespace registration {
      * Feature-detector-descriptor used in feature-matching
      */
     enum FeatureDetectorDescriptor {
-      ORB_ALGO,  // fast binary descriptor based on the combination of the FAST keypoint detector and the BRIEF descriptor.
-      AKAZE_ALGO // fast binary descriptor based on a speed-up version of KAZE.
+      ORB_ALGO,  // most efficient feature-detector-descriptor with least computational cost.
+      AKAZE_ALGO // computationally efficient than SIFT, SURF and KAZE but expensive than ORB and BRISK.
     };
 
     /**
@@ -24,6 +24,16 @@ namespace registration {
       HOMOGRAPHY,    // perspective transformation between two planes (two 2D point sets).
       AFFINE,        // optimal 2D affine transformation between two 2D point sets.
       AFFINE_PARTIAL // optimal limited affine transformation with 4 degrees of freedom between two 2D point sets.
+    };
+
+    /**
+     * Configuration parameters for the features based registration
+     */
+    struct FBConfig {
+      FeatureDetectorDescriptor detectorDescriptor = ORB_ALGO;
+      MotionModel model = HOMOGRAPHY;
+      int maxFeatures = 500;
+      float GoodMatchPercent = 0.15f;
     };
 
     /**
@@ -45,41 +55,37 @@ namespace registration {
     };
 
     /**
-     * [findMatchFeatures description]
-     * @param  im1       [description]
-     * @param  im2       [description]
-     * @param  algoToUse [description]
-     * @return           [description]
-     */
-    MatchFeatures findMatchFeatures(const cv::Mat &im1, const cv::Mat &im2, FeatureDetectorDescriptor algoToUse);
-
-    /**
      * Compute matches between reference and sensed images
+     *
      * @param im1       - reference image
      * @param im2       - sensed image
-     * @param algoToUse - ORB_ALGO   :  ORB is the most efficient feature-detector-descriptor with least computational cost.
-     *                    AKAZE_ALGO :  AKAZE is computationally efficient than SIFT, SURF and KAZE but expensive than ORB and BRISK.
-     * @param model     - HOMOGRAPHY     :  estimates a perspective transformation between two planes (two 2D point sets).
-     *                    AFFINE         :  estimates an optimal 2D affine transformation between two 2D point sets.
-     *                    AFFINE_PARTIAL :  estimates an optimal limited affine transformation with 4 degrees of freedom between two 2D point sets.
+     * @param config    - parameters to use for the features based registration
+     *
+     * @return the match features between reference and sensed images
+     */
+    MatchFeatures findMatchFeatures(const cv::Mat &im1, const cv::Mat &im2, FBConfig config);
+
+    /**
+     * Compute the transformation matrix between reference and sensed images
+     *
+     * @param im1       - reference image
+     * @param im2       - sensed image
+     * @param config    - parameters to use for the features based registration
      *
      * @return the transform matrix, according to the motion model used
      */
-    cv::Mat findTransformationMatrix(const cv::Mat &im1, const cv::Mat &im2, FeatureDetectorDescriptor algoToUse, MotionModel model);
+    cv::Mat findTransformationMatrix(const cv::Mat &im1, const cv::Mat &im2, FBConfig config);
 
     /**
      * Features based registation method
+     *
      * @param im1       - reference image
      * @param im2       - sensed image
-     * @param algoToUse - ORB_ALGO   :  ORB is the most efficient feature-detector-descriptor with least computational cost.
-     *                    AKAZE_ALGO :  AKAZE is computationally efficient than SIFT, SURF and KAZE but expensive than ORB and BRISK.
-     * @param model     - HOMOGRAPHY     :  estimates a perspective transformation between two planes (two 2D point sets).
-     *                    AFFINE         :  estimates an optimal 2D affine transformation between two 2D point sets.
-     *                    AFFINE_PARTIAL :  estimates an optimal limited affine transformation with 4 degrees of freedom between two 2D point sets.
+     * @param config    - parameters to use for the features based registration
      *
      * @return the sensed image registered according to the transform matrix used
      */
-    cv::Mat featuresBasedRegistration(const cv::Mat &im1, const cv::Mat &im2, FeatureDetectorDescriptor algoToUse, MotionModel model);
+    cv::Mat featuresBasedRegistration(const cv::Mat &im1, const cv::Mat &im2, FBConfig config);
 
   } // namespace featuresbased
 
