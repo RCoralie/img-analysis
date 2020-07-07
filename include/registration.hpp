@@ -157,6 +157,31 @@ namespace registration {
 
   } // namespace featuresbased
 
+  namespace fmt {
+
+    /**
+     * Represents parameters of an affine transform between two images
+     */
+    struct AffineTransformParameters {
+      double angle_degree;
+      double scaleFactor;
+      cv::Point2f shift;
+      cv::Mat rotationMatrix;
+      cv::Mat translationMatrix;
+    };
+
+    /**
+     * Fourier-Mellin based registration
+     *
+     * @param  block_a - ref image
+     * @param  block_b - sensed image
+     *
+     * @return the affine transformation matrice
+     */
+    cv::Mat fourierMellinTransform(const cv::Mat &block_a, const cv::Mat &block_b);
+
+  } // namespace fmt
+
   /**
    * ECC image alignment algorithm  (Alignment using Enhanced Correlation Coefficient Maximization)
    *
