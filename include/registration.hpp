@@ -72,7 +72,7 @@ namespace registration {
      *
      * @return the match features between reference and sensed images
      */
-    MatchFeatures findMatchFeatures(const cv::Mat &im1, const cv::Mat &im2, FBConfig config);
+    MatchFeatures findMatchFeatures(const cv::Mat &im1, const cv::Mat &im2, FBConfig config = FBConfig());
 
     /**
      * Compute the transformation matrix between reference and sensed images
@@ -83,7 +83,7 @@ namespace registration {
      *
      * @return the transform matrix, according to the motion model used
      */
-    cv::Mat findTransformationMatrix(const cv::Mat &im1, const cv::Mat &im2, FBConfig config);
+    cv::Mat findTransformationMatrix(const cv::Mat &im1, const cv::Mat &im2, FBConfig config = FBConfig());
 
     /**
      * Features based registation method
@@ -94,7 +94,7 @@ namespace registration {
      *
      * @return the sensed image registered according to the transform matrix used
      */
-    cv::Mat featuresBasedRegistration(const cv::Mat &im1, const cv::Mat &im2, FBConfig config);
+    cv::Mat featuresBasedRegistration(const cv::Mat &im1, const cv::Mat &im2, FBConfig config = FBConfig());
 
   } // namespace featuresbased
 

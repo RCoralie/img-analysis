@@ -26,20 +26,18 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  FBConfig config;
-
   // Print estimated homography
   cout << ">> Process matches ..." << endl;
-  MatchFeatures matchFeatures = findMatchFeatures(imReference, im, config);
+  MatchFeatures matchFeatures = findMatchFeatures(imReference, im);
 
   // Print estimated homography
   cout << ">> Process transformation matrix ..." << endl;
-  Mat h = findTransformationMatrix(imReference, im, config);
+  Mat h = findTransformationMatrix(imReference, im);
   cout << "Estimated motion model matrix : \n" << h << endl;
 
   // Align images
   cout << ">> Process image alignment ..." << endl;
-  Mat imReg = featuresBasedRegistration(imReference, im, config);
+  Mat imReg = featuresBasedRegistration(imReference, im);
 
   // Display results
   cv::namedWindow("Reference image", cv::WINDOW_GUI_NORMAL);
