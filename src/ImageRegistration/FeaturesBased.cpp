@@ -82,16 +82,17 @@ namespace registration {
       cvtColor(im2, im2Gray, COLOR_RGB2GRAY);
 
       // 1 & 2 - Detect keypoints and compute descriptors
-      struct ImgFeatures refImg = {vector<Point2f>(), vector<KeyPoint>(), Mat()};
-      struct ImgFeatures sensedImg = {vector<Point2f>(), vector<KeyPoint>(), Mat()};
-      if (config.detectorDescriptor == AKAZE_ALGO) {
-        AKAZEFeatureDescription(im1Gray, im2Gray, refImg.keypoints, sensedImg.keypoints, refImg.descriptors, sensedImg.descriptors);
+      vector<KeyPoint> keypoints1, keypoints2;
+      Mat descriptors1, descriptors2;
+      vector<Point2f> bestMatchPts1, bestMatchPts2;
+      if (config.detectorDescriptor == FBConfig::AKAZE_ALGO) {
+        AKAZEFeatureDescription(im1Gray, im2Gray, keypoints1, keypoints2, descriptors1, descriptors2);
       } else {
-        ORBFeatureDescription(im1Gray, im2Gray, refImg.keypoints, sensedImg.keypoints, refImg.descriptors, sensedImg.descriptors, config);
+        ORBFeatureDescription(im1Gray, im2Gray, keypoints1, keypoints2, descriptors1, descriptors2, config);
       }
       // 3- Match features
       std::vector<DMatch> matches;
-      BruteForceHammingMatcher(refImg.descriptors, sensedImg.descriptors, matches);
+      BruteForceHammingMatcher(descriptors1, descriptors2, matches);
       // sort matches by score
       std::sort(matches.begin(), matches.end());
       // remove not so good matches
@@ -99,14 +100,14 @@ namespace registration {
       matches.erase(matches.begin() + numGoodMatches, matches.end());
       // extract location of good matches
       for (size_t i = 0; i < matches.size(); i++) {
-        refImg.bestMatchPts.push_back(refImg.keypoints[matches[i].queryIdx].pt);
-        sensedImg.bestMatchPts.push_back(sensedImg.keypoints[matches[i].trainIdx].pt);
+        bestMatchPts1.push_back(keypoints1[matches[i].queryIdx].pt);
+        bestMatchPts2.push_back(keypoints2[matches[i].trainIdx].pt);
       }
 
-      struct MatchFeatures matchFeatures = {refImg, sensedImg, Mat()};
+      struct MatchFeatures matchFeatures = {{keypoints1, descriptors1, bestMatchPts1}, {keypoints2, descriptors2, bestMatchPts2}, Mat()};
 
       // OPTIONAL : store top matches (vizualization purpose)
-      drawMatches(im1, refImg.keypoints, im2, sensedImg.keypoints, matches, matchFeatures.imgOfMatches);
+      drawMatches(im1, keypoints1, im2, keypoints2, matches, matchFeatures.imgOfMatches);
 
       return matchFeatures;
     }
@@ -117,13 +118,13 @@ namespace registration {
       // 1 & 2 & 3 - Detect keypoints, compute descriptors and match features
       MatchFeatures matchFeatures = findMatchFeatures(im1, im2, config);
 
-      int method = (config.featuresMatching == LMEDS_METHOD) ? LMEDS : RANSAC;
+      int method = (config.featuresMatching == FBConfig::LMEDS_METHOD) ? LMEDS : RANSAC;
 
       // 4 - Estimate motion model transformation using robust method (RANSAC-based robust method or Least-Median robust method RANSAC)
       switch (config.model) {
-      case AFFINE:
+      case FBConfig::AFFINE:
         return estimateAffine2D(matchFeatures.sensedImgFeatures.bestMatchPts, matchFeatures.refImgFeatures.bestMatchPts, noArray(), method);
-      case AFFINE_PARTIAL:
+      case FBConfig::AFFINE_PARTIAL:
         return estimateAffinePartial2D(matchFeatures.sensedImgFeatures.bestMatchPts, matchFeatures.refImgFeatures.bestMatchPts, noArray(), method);
       default:
         return findHomography(matchFeatures.sensedImgFeatures.bestMatchPts, matchFeatures.refImgFeatures.bestMatchPts, method);
@@ -138,7 +139,7 @@ namespace registration {
 
       // Use motion model to warp sensed image
       Mat imgRegistered;
-      if (config.model == AFFINE || config.model == AFFINE_PARTIAL) {
+      if (config.model == FBConfig::AFFINE || config.model == FBConfig::AFFINE_PARTIAL) {
         warpAffine(im2, imgRegistered, transformation, im1.size());
       } else {
         warpPerspective(im2, imgRegistered, transformation, im1.size());
