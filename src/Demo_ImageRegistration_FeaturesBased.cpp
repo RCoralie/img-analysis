@@ -4,6 +4,7 @@
 
 using namespace std;
 using namespace cv;
+using namespace registration;
 using namespace registration::featuresbased;
 
 int main(int argc, char **argv) {
@@ -37,7 +38,7 @@ int main(int argc, char **argv) {
 
   // Align images
   cout << ">> Process image alignment ..." << endl;
-  Mat imReg = featuresBasedRegistration(imReference, im);
+  Mat imReg = imgRegistration(imReference, im, h, MM_HOMOGRAPHY);
 
   // Display results
   cv::namedWindow("Reference image", cv::WINDOW_GUI_NORMAL);

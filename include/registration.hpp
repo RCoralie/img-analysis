@@ -8,6 +8,32 @@
 
 namespace registration {
 
+  /**
+   * Describes motion model between two images
+   */
+  enum MotionModel {
+    MM_TRANSLATION = 0,
+    MM_TRANSLATION_AND_SCALE = 1,
+    MM_ROTATION = 2,
+    MM_RIGID = 3,
+    MM_SIMILARITY = 4,
+    MM_AFFINE = 5,
+    MM_HOMOGRAPHY = 6,
+    MM_UNKNOWN = 7
+  };
+
+  /**
+   * Align an image according to a transformation matrix and a motion model
+   *
+   * @param ref_ims           - reference image
+   * @param sensed_img        - image to align
+   * @param transformation    - transformation matrix
+   * @param motion_model      - motion model to use
+   *
+   * @return the sensed image registered according to the transform matrix used
+   */
+  cv::Mat imgRegistration(const cv::Mat &ref_img, const cv::Mat &sensed_img, const cv::Mat &transformation, MotionModel motion_model);
+
   namespace featuresbased {
 
     /**
@@ -89,17 +115,6 @@ namespace registration {
      * @return the transform matrix, according to the motion model used
      */
     cv::Mat findTransformationMatrix(const cv::Mat &im1, const cv::Mat &im2, FBConfig config = FBConfig());
-
-    /**
-     * Features based registation method
-     *
-     * @param im1       - reference image
-     * @param im2       - sensed image
-     * @param config    - parameters to use for the features based registration
-     *
-     * @return the sensed image registered according to the transform matrix used
-     */
-    cv::Mat featuresBasedRegistration(const cv::Mat &im1, const cv::Mat &im2, FBConfig config = FBConfig());
 
   } // namespace featuresbased
 

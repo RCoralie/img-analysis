@@ -131,22 +131,6 @@ namespace registration {
       }
     }
 
-    // ---------------------------------------------------------------------------
-    Mat featuresBasedRegistration(const Mat &im1, const Mat &im2, FBConfig config) {
-
-      // Estimate motion model transformation
-      Mat transformation = findTransformationMatrix(im1, im2, config);
-
-      // Use motion model to warp sensed image
-      Mat imgRegistered;
-      if (config.model == FBConfig::AFFINE || config.model == FBConfig::AFFINE_PARTIAL) {
-        warpAffine(im2, imgRegistered, transformation, im1.size());
-      } else {
-        warpPerspective(im2, imgRegistered, transformation, im1.size());
-      }
-      return imgRegistered;
-    }
-
   } // namespace featuresbased
 
 } // namespace registration
