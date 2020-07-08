@@ -20,7 +20,7 @@ namespace registration {
 
   namespace corr {
 
-    void ECCRegistration(const Mat &im1, const Mat &im2, Mat &warp_matrix, Mat &warp_img, int warp_mode) {
+    Mat enhancedCorrelationCoefficientMaximization(const Mat &im1, const Mat &im2, int warp_mode) {
 
       // Convert images to work on grayscale images
       Mat im1Gray, im2Gray;
@@ -28,21 +28,17 @@ namespace registration {
       cvtColor(im2, im2Gray, COLOR_RGB2GRAY);
 
       // Initialize the matrix to identity
+      Mat warp_matrix;
       if (warp_mode == MOTION_HOMOGRAPHY)
         warp_matrix = Mat::eye(3, 3, CV_32F);
       else
-        warp_matrix = Mat::eye(2, 3, CV_32F);
 
+        warp_matrix = Mat::eye(2, 3, CV_32F);
       // Define termination criteria & run the ECC algorithm
       TermCriteria criteria(TermCriteria::COUNT + TermCriteria::EPS, NB_ITERATIONS, TERMINATION_EPS);
-      findTransformECC(im1Gray, im2Gray, warp_matrix, warp_mode, criteria);
+      findTransformECC(im2Gray, im1Gray, warp_matrix, warp_mode, criteria);
 
-      if (warp_mode != MOTION_HOMOGRAPHY)
-        // Use warpAffine for Translation, Euclidean and Affine
-        warpAffine(im2, warp_img, warp_matrix, im1.size(), INTER_LINEAR + WARP_INVERSE_MAP);
-      else
-        // Use warpPerspective for Homography
-        warpPerspective(im2, warp_img, warp_matrix, im1.size(), INTER_LINEAR + WARP_INVERSE_MAP);
+      return warp_matrix;
     }
 
   }; // namespace corr

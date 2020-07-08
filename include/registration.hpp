@@ -164,15 +164,20 @@ namespace registration {
 
   namespace corr {
     /**
-     * ECC image alignment algorithm  (Alignment using Enhanced Correlation Coefficient Maximization)
+     * ECC image alignment algorithm  (Alignment using Enhanced Correlation Coefficient Maximization) :
+     * compute the transformation matrix between reference and sensed images
      *
      * @param im1         - reference image
      * @param im2         - sensed image
-     * @param warp_matrix - the 2x3 or 3x3 warp matrix depending on the motion model.
-     * @param warp_model  - the warp model, depending on the motion model between images
-     * @param warp_image  - the warped image.
+     * @param warp_model  - the warp model, depending on the motion model between images :
+     *                      cv::MOTION_HOMOGRAPHY
+     *                      cv::MOTION_EUCLIDEAN
+     *                      cv::MOTION_TRANSLATION
+     *                      cv::MOTION_AFFINE
+     *
+     * @return the transform matrix, according to the motion model used
      */
-    void ECCRegistration(const cv::Mat &im1, const cv::Mat &im2, cv::Mat &warp_matrix, cv::Mat &warp_img, int warp_model);
+    cv::Mat enhancedCorrelationCoefficientMaximization(const cv::Mat &im1, const cv::Mat &im2, int warp_model = cv::MOTION_HOMOGRAPHY);
 
   }; // namespace corr
 

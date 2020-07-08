@@ -4,6 +4,7 @@
 
 using namespace cv;
 using namespace std;
+using namespace registration;
 using namespace registration::corr;
 
 int main(int argc, char **argv) {
@@ -27,8 +28,8 @@ int main(int argc, char **argv) {
     return -1;
   }
 
-  Mat warp_matrix, warp_img;
-  ECCRegistration(im1, im2, warp_matrix, warp_img, MOTION_EUCLIDEAN);
+  Mat warp_matrix = enhancedCorrelationCoefficientMaximization(im1, im2, MOTION_TRANSLATION);
+  Mat warp_img = imgRegistration(im1, im2, warp_matrix);
 
   // Show final result
   imshow("Ref image", im1);
