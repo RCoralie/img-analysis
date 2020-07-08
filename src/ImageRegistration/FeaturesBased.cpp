@@ -11,14 +11,11 @@
  *     - Apply homography transformation
  */
 
-#include "opencv2/features2d.hpp"
 #include "opencv2/opencv.hpp"
-#include "opencv2/xfeatures2d.hpp"
 #include "registration.hpp"
 
 using namespace std;
 using namespace cv;
-using namespace cv::xfeatures2d;
 
 namespace registration {
 
@@ -77,18 +74,18 @@ namespace registration {
     MatchFeatures findMatchFeatures(const Mat &im1, const Mat &im2, FBConfig config) {
 
       // Convert images to work on grayscale images
-      Mat im1Gray, im2Gray;
-      cvtColor(im1, im1Gray, COLOR_RGB2GRAY);
-      cvtColor(im2, im2Gray, COLOR_RGB2GRAY);
+      Mat im1_gray, im2_gray;
+      cvtColor(im1, im1_gray, COLOR_RGB2GRAY);
+      cvtColor(im2, im2_gray, COLOR_RGB2GRAY);
 
       // 1 & 2 - Detect keypoints and compute descriptors
       vector<KeyPoint> keypoints1, keypoints2;
       Mat descriptors1, descriptors2;
-      vector<Point2f> bestMatchPts1, bestMatchPts2;
+      vector<Point2f> best_match_pts_1, best_match_pts_2;
       if (config.detectorDescriptor == FBConfig::AKAZE_ALGO) {
-        AKAZEFeatureDescription(im1Gray, im2Gray, keypoints1, keypoints2, descriptors1, descriptors2);
+        AKAZEFeatureDescription(im1_gray, im2_gray, keypoints1, keypoints2, descriptors1, descriptors2);
       } else {
-        ORBFeatureDescription(im1Gray, im2Gray, keypoints1, keypoints2, descriptors1, descriptors2, config);
+        ORBFeatureDescription(im1_gray, im2_gray, keypoints1, keypoints2, descriptors1, descriptors2, config);
       }
       // 3- Match features
       std::vector<DMatch> matches;
@@ -96,38 +93,38 @@ namespace registration {
       // sort matches by score
       std::sort(matches.begin(), matches.end());
       // remove not so good matches
-      const int numGoodMatches = matches.size() * config.GoodMatchPercent;
-      matches.erase(matches.begin() + numGoodMatches, matches.end());
+      const int num_good_matches = matches.size() * config.GoodMatchPercent;
+      matches.erase(matches.begin() + num_good_matches, matches.end());
       // extract location of good matches
       for (size_t i = 0; i < matches.size(); i++) {
-        bestMatchPts1.push_back(keypoints1[matches[i].queryIdx].pt);
-        bestMatchPts2.push_back(keypoints2[matches[i].trainIdx].pt);
+        best_match_pts_1.push_back(keypoints1[matches[i].queryIdx].pt);
+        best_match_pts_2.push_back(keypoints2[matches[i].trainIdx].pt);
       }
 
-      struct MatchFeatures matchFeatures = {{keypoints1, descriptors1, bestMatchPts1}, {keypoints2, descriptors2, bestMatchPts2}, Mat()};
+      struct MatchFeatures match_features = {{keypoints1, descriptors1, best_match_pts_1}, {keypoints2, descriptors2, best_match_pts_2}, Mat()};
 
       // OPTIONAL : store top matches (vizualization purpose)
-      drawMatches(im1, keypoints1, im2, keypoints2, matches, matchFeatures.imgOfMatches);
+      drawMatches(im1, keypoints1, im2, keypoints2, matches, match_features.imgOfMatches);
 
-      return matchFeatures;
+      return match_features;
     }
 
     // ---------------------------------------------------------------------------
-    Mat findTransformationMatrix(const Mat &im1, const Mat &im2, FBConfig config) {
+    Mat featuresBasedMethod(const Mat &im1, const Mat &im2, FBConfig config) {
 
       // 1 & 2 & 3 - Detect keypoints, compute descriptors and match features
-      MatchFeatures matchFeatures = findMatchFeatures(im1, im2, config);
+      MatchFeatures match_features = findMatchFeatures(im1, im2, config);
 
       int method = (config.featuresMatching == FBConfig::LMEDS_METHOD) ? LMEDS : RANSAC;
 
       // 4 - Estimate motion model transformation using robust method (RANSAC-based robust method or Least-Median robust method RANSAC)
       switch (config.model) {
       case FBConfig::AFFINE:
-        return estimateAffine2D(matchFeatures.sensedImgFeatures.bestMatchPts, matchFeatures.refImgFeatures.bestMatchPts, noArray(), method);
+        return estimateAffine2D(match_features.sensedImgFeatures.bestMatchPts, match_features.refImgFeatures.bestMatchPts, noArray(), method);
       case FBConfig::AFFINE_PARTIAL:
-        return estimateAffinePartial2D(matchFeatures.sensedImgFeatures.bestMatchPts, matchFeatures.refImgFeatures.bestMatchPts, noArray(), method);
+        return estimateAffinePartial2D(match_features.sensedImgFeatures.bestMatchPts, match_features.refImgFeatures.bestMatchPts, noArray(), method);
       default:
-        return findHomography(matchFeatures.sensedImgFeatures.bestMatchPts, matchFeatures.refImgFeatures.bestMatchPts, method);
+        return findHomography(match_features.sensedImgFeatures.bestMatchPts, match_features.refImgFeatures.bestMatchPts, method);
       }
     }
 

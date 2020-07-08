@@ -1,10 +1,8 @@
 #ifndef REGISTRATION_HPP
 #define REGISTRATION_HPP
 
-#include "opencv2/core/core.hpp"
 #include "opencv2/features2d.hpp"
 #include "opencv2/opencv.hpp"
-#include "opencv2/xfeatures2d.hpp"
 
 namespace registration {
 
@@ -76,35 +74,28 @@ namespace registration {
   namespace featuresbased {
 
     /**
-     * Configuration parameters for the features based registration
+     * Configuration parameters for the features based registration.
      * This configuration provides default parameters
      */
     struct FBConfig {
 
-      /**
-       * Feature-detector-descriptor used in feature-matching
-       */
+      // Feature-detector-descriptor used in feature-matching
       enum FeatureDetectorDescriptor {
         ORB_ALGO,  // most efficient feature-detector-descriptor with least computational cost.
         AKAZE_ALGO // computationally efficient than SIFT, SURF and KAZE but expensive than ORB and BRISK.
       };
 
-      /**
-       *  The spatial relationships between the reference and sensed images
-       */
+      // Spatial relationships between the reference and sensed images
       enum MotionModel {
         HOMOGRAPHY,    // perspective transformation between two planes (two 2D point sets).
         AFFINE,        // optimal 2D affine transformation between two 2D point sets.
         AFFINE_PARTIAL // optimal limited affine transformation with 4 degrees of freedom between two 2D point sets.
       };
 
-      /**
-       * Feature matching strategy applied for rejecting outliers and fitting the transformation models
-       */
+      // Feature matching strategy applied for rejecting outliers and fitting the transformation models
       enum featureMatching {
-        RANSAC_METHOD, // RANSAC robust method : can handle practically any ratio of outliers but need a threshold to distinguish inliers from
-                       // outliers.
-        LMEDS_METHOD // Least-Median robust method : does not need any threshold but it works correctly only when there are more than 50% of inliers.
+        RANSAC_METHOD, // can handle practically any ratio of outliers but need a threshold to distinguish inliers from outliers.
+        LMEDS_METHOD   // Ldoes not need any threshold but it works correctly only when there are more than 50% of inliers.
       };
 
       FeatureDetectorDescriptor detectorDescriptor = ORB_ALGO;
@@ -145,7 +136,7 @@ namespace registration {
     MatchFeatures findMatchFeatures(const cv::Mat &im1, const cv::Mat &im2, FBConfig config = FBConfig());
 
     /**
-     * Compute the transformation matrix between reference and sensed images
+     * Features based registration : compute the transformation matrix between reference and sensed images
      *
      * @param im1       - reference image
      * @param im2       - sensed image
@@ -153,25 +144,14 @@ namespace registration {
      *
      * @return the transform matrix, according to the motion model used
      */
-    cv::Mat findTransformationMatrix(const cv::Mat &im1, const cv::Mat &im2, FBConfig config = FBConfig());
+    cv::Mat featuresBasedMethod(const cv::Mat &im1, const cv::Mat &im2, FBConfig config = FBConfig());
 
   } // namespace featuresbased
 
   namespace fmt {
 
     /**
-     * Represents parameters of an affine transform between two images
-     */
-    struct AffineTransformParameters {
-      double angle_degree;
-      double scaleFactor;
-      cv::Point2f shift;
-      cv::Mat rotationMatrix;
-      cv::Mat translationMatrix;
-    };
-
-    /**
-     * Fourier-Mellin based registration
+     * Fourier-Mellin based registration : compute the transformation matrix between reference and sensed images
      *
      * @param  block_a - ref image
      * @param  block_b - sensed image
@@ -182,16 +162,19 @@ namespace registration {
 
   } // namespace fmt
 
-  /**
-   * ECC image alignment algorithm  (Alignment using Enhanced Correlation Coefficient Maximization)
-   *
-   * @param im1         - reference image
-   * @param im2         - sensed image
-   * @param warp_matrix - the 2x3 or 3x3 warp matrix depending on the motion model.
-   * @param warp_mode   - the warp model, depending on the motion model between images
-   * @param warp_image  - the warped image.
-   */
-  void ECCRegistration(const cv::Mat &im1, const cv::Mat &im2, cv::Mat &warp_matrix, cv::Mat &warp_img, int warp_mode);
+  namespace corr {
+    /**
+     * ECC image alignment algorithm  (Alignment using Enhanced Correlation Coefficient Maximization)
+     *
+     * @param im1         - reference image
+     * @param im2         - sensed image
+     * @param warp_matrix - the 2x3 or 3x3 warp matrix depending on the motion model.
+     * @param warp_model  - the warp model, depending on the motion model between images
+     * @param warp_image  - the warped image.
+     */
+    void ECCRegistration(const cv::Mat &im1, const cv::Mat &im2, cv::Mat &warp_matrix, cv::Mat &warp_img, int warp_model);
+
+  }; // namespace corr
 
 } // namespace registration
 

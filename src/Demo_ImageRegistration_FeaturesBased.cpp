@@ -9,21 +9,21 @@ using namespace registration::featuresbased;
 
 int main(int argc, char **argv) {
   if (argc < 3) {
-    std::cout << "need two images : reference image and sensed image." << std::endl;
+    cout << "need two images : reference image and sensed image." << endl;
     return -1;
   }
 
   // Read reference image
-  cv::Mat imReference = cv::imread(argv[1]);
+  Mat imReference = imread(argv[1]);
   if (imReference.empty()) {
-    std::cout << "Could not open or find the reference image" << std::endl;
+    cout << "Could not open or find the reference image" << endl;
     return -1;
   }
 
   // Read image to be aligned
-  cv::Mat im = cv::imread(argv[2]);
+  Mat im = imread(argv[2]);
   if (im.empty()) {
-    std::cout << "Could not open or find the sensed image" << std::endl;
+    cout << "Could not open or find the sensed image" << endl;
     return -1;
   }
 
@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
 
   // Print estimated homography
   cout << ">> Process transformation matrix ..." << endl;
-  Mat h = findTransformationMatrix(imReference, im);
+  Mat h = featuresBasedMethod(imReference, im);
   cout << "Estimated motion model matrix : \n" << h << endl;
 
   // Align images
@@ -41,27 +41,27 @@ int main(int argc, char **argv) {
   Mat imReg = imgRegistration(imReference, im, h);
 
   // Display results
-  cv::namedWindow("Reference image", cv::WINDOW_GUI_NORMAL);
-  cv::resizeWindow("Reference image", 300, 300);
-  cv::moveWindow("Reference image", 0, 10);
-  cv::imshow("Reference image", imReference);
+  namedWindow("Reference image", WINDOW_GUI_NORMAL);
+  resizeWindow("Reference image", 300, 300);
+  moveWindow("Reference image", 0, 10);
+  imshow("Reference image", imReference);
 
-  cv::namedWindow("Sensed image", cv::WINDOW_GUI_NORMAL);
-  cv::resizeWindow("Sensed image", 300, 300);
-  cv::moveWindow("Sensed image", 400, 10);
-  cv::imshow("Sensed image", im);
+  namedWindow("Sensed image", WINDOW_GUI_NORMAL);
+  resizeWindow("Sensed image", 300, 300);
+  moveWindow("Sensed image", 400, 10);
+  imshow("Sensed image", im);
 
-  cv::namedWindow("Registered image", cv::WINDOW_GUI_NORMAL);
-  cv::resizeWindow("Registered image", 300, 300);
-  cv::moveWindow("Registered image", 800, 10);
-  cv::imshow("Registered image", imReg);
+  namedWindow("Registered image", WINDOW_GUI_NORMAL);
+  resizeWindow("Registered image", 300, 300);
+  moveWindow("Registered image", 800, 10);
+  imshow("Registered image", imReg);
 
-  cv::namedWindow("Matches", cv::WINDOW_GUI_NORMAL);
-  cv::resizeWindow("Matches", 1200, 500);
-  cv::moveWindow("Matches", 100, 400);
-  cv::imshow("Matches", matchFeatures.imgOfMatches);
+  namedWindow("Matches", WINDOW_GUI_NORMAL);
+  resizeWindow("Matches", 1200, 500);
+  moveWindow("Matches", 100, 400);
+  imshow("Matches", matchFeatures.imgOfMatches);
 
-  cv::waitKey(0);
+  waitKey(0);
 
   // Store results
   // string outFilename("matches.jpg");

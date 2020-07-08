@@ -13,14 +13,11 @@
  * log-polar transform of the magnitude of the Fourier transforms of the images.
  */
 
+#include "opencv2/opencv.hpp"
 #include "registration.hpp"
-#include <opencv2/calib3d.hpp>
-#include <opencv2/highgui.hpp>
-#include <opencv2/imgproc.hpp>
 
 using namespace std;
 using namespace cv;
-using namespace registration;
 
 namespace registration {
 
@@ -98,24 +95,24 @@ namespace registration {
 
       /**
        * Create an highpass filter
-       * @param sz  - size of the filter matrix
-       * @param dst - computed filter matrix
+       * @param size  - size of the filter matrix
+       * @param dst   - computed filter matrix
        */
-      void highpass(Size sz, Mat &dst) {
-        Mat a = Mat(sz.height, 1, CV_32FC1);
-        Mat b = Mat(1, sz.width, CV_32FC1);
+      void highpass(Size size, Mat &dst) {
+        Mat a = Mat(size.height, 1, CV_32FC1);
+        Mat b = Mat(1, size.width, CV_32FC1);
 
-        float step_y = CV_PI / sz.height;
+        float step_y = CV_PI / size.height;
         float val = -CV_PI * 0.5;
 
-        for (int i = 0; i < sz.height; ++i) {
+        for (int i = 0; i < size.height; ++i) {
           a.at<float>(i) = cos(val);
           val += step_y;
         }
 
         val = -CV_PI * 0.5;
-        float step_x = CV_PI / sz.width;
-        for (int i = 0; i < sz.width; ++i) {
+        float step_x = CV_PI / size.width;
+        for (int i = 0; i < size.width; ++i) {
           b.at<float>(i) = cos(val);
           val += step_x;
         }

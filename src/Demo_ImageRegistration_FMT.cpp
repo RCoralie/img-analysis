@@ -1,6 +1,6 @@
-#include <iostream>
-#include <opencv2/opencv.hpp>
-#include <registration.hpp>
+#include "iostream"
+#include "opencv2/opencv.hpp"
+#include "registration.hpp"
 
 using namespace std;
 using namespace cv;
@@ -9,30 +9,30 @@ using namespace registration::fmt;
 
 int main(int argc, char **argv) {
   if (argc < 3) {
-    std::cout << "need two images : reference image and sensed image." << std::endl;
+    cout << "need two images : reference image and sensed image." << endl;
     return -1;
   }
 
   // Read reference image
-  cv::Mat im0 = cv::imread(argv[1]);
+  Mat im0 = imread(argv[1]);
   if (im0.empty()) {
-    std::cout << "Could not open or find the reference image" << std::endl;
+    cout << "Could not open or find the reference image" << endl;
     return -1;
   }
 
   // Read image to be aligned
-  cv::Mat im1 = cv::imread(argv[2]);
+  Mat im1 = imread(argv[2]);
   if (im1.empty()) {
-    std::cout << "Could not open or find the sensed image" << std::endl;
+    cout << "Could not open or find the sensed image" << endl;
     return -1;
   }
 
   // Preprocess images
   if (im0.channels() == 3) {
-    cvtColor(im0, im0, cv::COLOR_BGR2GRAY);
+    cvtColor(im0, im0, COLOR_BGR2GRAY);
   }
   if (im1.channels() == 3) {
-    cvtColor(im1, im1, cv::COLOR_BGR2GRAY);
+    cvtColor(im1, im1, COLOR_BGR2GRAY);
   }
 
   if (im0.type() == CV_8UC1) {
@@ -49,28 +49,28 @@ int main(int argc, char **argv) {
   }
 
   // Compute translation
-  cv::Mat transform = fourierMellinTransform(im0, im1);
-  std::cout << "Translation [x, y] : " << extractTranslationFromAffine(transform) << std::endl;
+  Mat transform = fourierMellinTransform(im0, im1);
+  cout << "Translation [x, y] : " << extractTranslationFromAffine(transform) << endl;
 
   // Warp
   Mat imReg;
   warpAffine(im1, imReg, transform, im0.size());
 
   // Display results
-  cv::namedWindow("Reference image", cv::WINDOW_GUI_NORMAL);
-  cv::resizeWindow("Reference image", 300, 300);
-  cv::moveWindow("Reference image", 0, 10);
-  cv::imshow("Reference image", im0);
+  namedWindow("Reference image", WINDOW_GUI_NORMAL);
+  resizeWindow("Reference image", 300, 300);
+  moveWindow("Reference image", 0, 10);
+  imshow("Reference image", im0);
 
-  cv::namedWindow("Sensed image", cv::WINDOW_GUI_NORMAL);
-  cv::resizeWindow("Sensed image", 300, 300);
-  cv::moveWindow("Sensed image", 400, 10);
-  cv::imshow("Sensed image", im1);
+  namedWindow("Sensed image", WINDOW_GUI_NORMAL);
+  resizeWindow("Sensed image", 300, 300);
+  moveWindow("Sensed image", 400, 10);
+  imshow("Sensed image", im1);
 
-  cv::namedWindow("Registered image", cv::WINDOW_GUI_NORMAL);
-  cv::resizeWindow("Registered image", 300, 300);
-  cv::moveWindow("Registered image", 800, 10);
-  cv::imshow("Registered image", imReg);
+  namedWindow("Registered image", WINDOW_GUI_NORMAL);
+  resizeWindow("Registered image", 300, 300);
+  moveWindow("Registered image", 800, 10);
+  imshow("Registered image", imReg);
 
-  cv::waitKey(0);
+  waitKey(0);
 }
