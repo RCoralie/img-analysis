@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
 
   // Align images
   cout << ">> Process image alignment ..." << endl;
-  Mat imReg = imgRegistration(imReference, im, h, MM_HOMOGRAPHY);
+  Mat imReg = imgRegistration(imReference, im, h);
 
   // Display results
   cv::namedWindow("Reference image", cv::WINDOW_GUI_NORMAL);
