@@ -153,12 +153,12 @@ namespace registration {
     /**
      * Fourier-Mellin based registration : compute the transformation matrix between reference and sensed images
      *
-     * @param  block_a - ref image
-     * @param  block_b - sensed image
+     * @param  ref_img    - ref image
+     * @param  sensed_img - sensed image
      *
      * @return the affine transformation matrice
      */
-    cv::Mat fourierMellinTransform(const cv::Mat &block_a, const cv::Mat &block_b);
+    cv::Mat fourierMellinTransform(const cv::Mat &ref_img, const cv::Mat &sensed_img);
 
   } // namespace fmt
 

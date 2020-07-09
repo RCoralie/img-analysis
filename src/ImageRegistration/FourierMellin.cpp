@@ -124,9 +124,51 @@ namespace registration {
     } // namespace
 
     //----------------------------------------------------------------------------//
-    Mat fourierMellinTransform(const Mat &block_a, const Mat &block_b) {
-      CV_Assert(block_a.cols != 0 && block_a.rows != 0 && block_b.cols != 0 && block_b.rows != 0);
-      CV_Assert(block_a.size() == block_b.size());
+    Mat fourierMellinTransform(const Mat &ref_img, const Mat &sensed_img) {
+      CV_Assert(ref_img.cols != 0 && ref_img.rows != 0 && sensed_img.cols != 0 && sensed_img.rows != 0);
+      CV_Assert(ref_img.size() == sensed_img.size());
+
+      Mat block_a = ref_img.clone();
+      Mat block_b = sensed_img.clone();
+
+      if (block_a.channels() == 3) {
+        cvtColor(block_a, block_a, COLOR_BGR2GRAY);
+      }
+      if (block_b.channels() == 3) {
+        cvtColor(block_b, block_b, COLOR_BGR2GRAY);
+      }
+      if (block_a.type() == CV_8UC1) {
+        block_a.convertTo(block_a, CV_64FC1, 1.0 / 255.0);
+      }
+      if (block_b.type() == CV_8UC1) {
+        block_b.convertTo(block_b, CV_64FC1, 1.0 / 255.0);
+      }
+      if (block_a.type() == CV_32FC1) {
+        block_a.convertTo(block_a, CV_64FC1);
+      }
+      if (block_b.type() == CV_32FC1) {
+        block_b.convertTo(block_b, CV_64FC1);
+      }
+
+      if (block_a.channels() == 3) {
+        cvtColor(block_a, block_a, COLOR_BGR2GRAY);
+      }
+      if (block_b.channels() == 3) {
+        cvtColor(block_b, block_b, COLOR_BGR2GRAY);
+      }
+      if (block_a.type() == CV_8UC1) {
+        block_a.convertTo(block_a, CV_64FC1, 1.0 / 255.0);
+      }
+      if (block_b.type() == CV_8UC1) {
+        block_b.convertTo(block_b, CV_64FC1, 1.0 / 255.0);
+      }
+      if (block_a.type() == CV_32FC1) {
+        block_a.convertTo(block_a, CV_64FC1);
+      }
+      if (block_b.type() == CV_32FC1) {
+        block_b.convertTo(block_b, CV_64FC1);
+      }
+
       CV_Assert(block_a.type() == CV_32FC1 || block_a.type() == CV_64FC1);
       CV_Assert(block_b.type() == CV_32FC1 || block_b.type() == CV_64FC1);
 
