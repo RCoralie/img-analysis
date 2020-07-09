@@ -64,3 +64,6 @@ target_link_libraries(Demo_RegistrationECC ${LINK_LIBS})
 
 add_executable(Demo_RegistrationFMT ${SRC_REGISTRATION} src/Demo_ImageRegistration_FMT.cpp)
 target_link_libraries(Demo_RegistrationFMT ${LINK_LIBS})
+
+add_executable(test_registration ${SRC_REGISTRATION} src/test_registration.cpp)
+target_link_libraries(test_registration ${LINK_LIBS})
