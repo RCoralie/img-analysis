@@ -50,10 +50,29 @@ namespace registration {
 
     CV_Assert(affine.rows == 2 && affine.cols == 3);
 
-    double t_x = affine.at<double>(0, 2);
-    double t_y = affine.at<double>(1, 2);
-    return Point2f(t_x, t_y);
-  }
+    // The general rule for Matrices typenames in OpenCV is: CV_<bit_depth>(S|U|F)C<number_of_channels>
+    // S = Signed integer
+    // U = Unsigned integer
+    // F = Float
+    switch (affine.depth()) {
+    case CV_8U:
+      return Point2f(affine.at<uint8_t>(0, 2), affine.at<uint8_t>(1, 2));
+    case CV_8S:
+      return Point2f(affine.at<int8_t>(0, 2), affine.at<int8_t>(1, 2));
+    case CV_16U:
+      return Point2f(affine.at<uint16_t>(0, 2), affine.at<uint16_t>(1, 2));
+    case CV_16S:
+      return Point2f(affine.at<int16_t>(0, 2), affine.at<int16_t>(1, 2));
+    case CV_32S:
+      return Point2f(affine.at<int32_t>(0, 2), affine.at<int32_t>(1, 2));
+    case CV_32F:
+      return Point2f(affine.at<float>(0, 2), affine.at<float>(1, 2));
+    case CV_64F:
+      return Point2f(affine.at<double>(0, 2), affine.at<double>(1, 2));
+    default:
+      return Point2f(NAN, NAN);
+    }
+  } // namespace registration
 
   // ---------------------------------------------------------------------------
   Mat combineHomographies(const Mat &first, const Mat &second) {
@@ -95,5 +114,4 @@ namespace registration {
 
     return extractAffineFromHomography(result_mat);
   }
-
 }; // namespace registration
