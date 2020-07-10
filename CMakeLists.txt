@@ -14,7 +14,7 @@ conan_basic_setup()
 
 find_package(OpenCV REQUIRED)
 find_package(yaml-cpp REQUIRED)
-find_package(Boost REQUIRED COMPONENTS system filesystem)
+find_package(Boost REQUIRED COMPONENTS system filesystem program_options regex)
 find_package(GTest REQUIRED)
 find_package(PythonLibs REQUIRED)
 
@@ -43,6 +43,8 @@ LIST(APPEND LINK_LIBS
    ${YAML_CPP_LIBRARIES}
    ${Boost_SYSTEM_LIBRARY}
    ${Boost_FILESYSTEM_LIBRARY}
+   ${Boost_PROGRAM_OPTIONS_LIBRARY}
+   ${Boost_REGEX_LIBRARY}
 )
 
 LIST(APPEND LINK_TEST_LIBS
