@@ -93,14 +93,14 @@ namespace registration {
       };
 
       // Feature matching strategy applied for rejecting outliers and fitting the transformation models
-      enum featureMatching {
+      enum featuresMatching {
         RANSAC_METHOD, // can handle practically any ratio of outliers but need a threshold to distinguish inliers from outliers.
         LMEDS_METHOD   // Ldoes not need any threshold but it works correctly only when there are more than 50% of inliers.
       };
 
       FeatureDetectorDescriptor detectorDescriptor = ORB_ALGO;
       MotionModel model = HOMOGRAPHY;
-      int featuresMatching = RANSAC_METHOD;
+      featuresMatching featuresMatching = RANSAC_METHOD;
       int maxFeatures = 500;
       float GoodMatchPercent = 0.15f;
     };
