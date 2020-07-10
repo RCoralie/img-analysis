@@ -1,7 +1,9 @@
-#include "iostream"
-#include "opencv2/opencv.hpp"
 #include "registration.hpp"
-#include "time.h"
+#include <boost/program_options.hpp>
+#include <boost/regex.hpp>
+#include <iostream>
+#include <opencv2/opencv.hpp>
+#include <time.h>
 
 using namespace std;
 using namespace cv;
@@ -9,6 +11,9 @@ using namespace registration;
 using namespace registration::fmt;
 using namespace registration::featuresbased;
 using namespace registration::corr;
+using namespace boost::program_options;
+
+boost::regex number_regex("-?[0-9]+([\\.][0-9]+)?");
 
 //----------------------------------------------------------------------------//
 void shift(cv::Mat &img, int x, int y) {
@@ -303,51 +308,79 @@ void compareShiftRegistrationVisually(const Mat &ref_img, const Mat &sensed_img)
 
 //----------------------------------------------------------------------------//
 int main(int argc, char **argv) {
-  if (argc < 2) {
-    cout << "need a reference image." << endl;
-    return -1;
+
+  // Declare the supported options.
+  options_description desc("Allowed options");
+  desc.add_options()("help", "produce help message");
+  desc.add_options()("benchmark,B", value<vector<string>>()->multitoken(),
+                     "compare accuracy and execution time of each registration methods on ground state computed : [reference image path] "
+                     "[x-translation] [y-translation] ");
+  desc.add_options()("vizualize,V", value<vector<string>>()->multitoken(),
+                     "compare registration methods on reference and sensed images loaded : [reference image path] [sensed image path]");
+
+  variables_map vm;
+  store(parse_command_line(argc, argv, desc), vm);
+  notify(vm);
+
+  // --------------------------------------------------------------------------
+  if (vm.count("help")) {
+    cout << desc << "\n";
+    return 1;
+  }
+  // --------------------------------------------------------------------------
+  if (vm.count("benchmark")) {
+    vector<string> arg = vm["benchmark"].as<vector<string>>();
+    if (arg.size() != 3) {
+      cout << "Expected 3 arguments to process the benchmark : [reference image path] [x-translation] [y-translation]" << endl;
+      return -1;
+    }
+    boost::cmatch what;
+    if (!boost::regex_match(arg[1].c_str(), what, number_regex) || !boost::regex_match(arg[2].c_str(), what, number_regex)) {
+      cout << "Invalid argument type for : [x-translation] or [y-translation]" << endl;
+      return -1;
+    }
+    Mat ref_img = imread(arg[0]);
+    if (ref_img.empty()) {
+      cout << "Could not open or find the [reference image path]" << endl;
+      return -1;
+    }
+
+    // compare accuracy and execution time of each registration methods on ground state
+    double x = atof(arg[1].c_str());
+    double y = atof(arg[2].c_str());
+
+    // Create image to be aligned
+    Mat sensed_img = ref_img.clone();
+    cv::Point2f t(x, y);
+    shift(sensed_img, t.x, t.y);
+
+    cout << "GROUND STATE : -------------------------------------------" << endl;
+    cout << "t[x, y] : " << t << endl;
+
+    compareShiftRegistrationAccuracy(ref_img, sensed_img);
+
+    compareShiftRegistrationSpeed(ref_img, sensed_img);
   }
 
-  // Read reference image
-  Mat ref_img = imread(argv[1]);
-  if (ref_img.empty()) {
-    cout << "Could not open or find the reference image" << endl;
-    return -1;
+  // --------------------------------------------------------------------------
+  else if (vm.count("vizualize")) {
+    vector<string> arg = vm["vizualize"].as<vector<string>>();
+    if (arg.size() != 2) {
+      cout << "Expected 2 arguments : [reference image path] [sensed image path]" << endl;
+      return -1;
+    }
+    Mat ref_img = imread(arg[0]);
+    if (ref_img.empty()) {
+      cout << "Could not open or find the [reference image path]" << endl;
+      return -1;
+    }
+    Mat sensed_img = imread(arg[1]);
+    if (sensed_img.empty()) {
+      cout << "Could not open or find the [sensed image path]" << endl;
+      return -1;
+    }
+
+    // compare registration methods on reference and sensed images loaded
+    compareShiftRegistrationVisually(ref_img, sensed_img);
   }
-
-  float x = 10;
-  float y = 20;
-  // Create image to be aligned
-  Mat sensed_img = ref_img.clone();
-  cv::Point2f t(x, y);
-  shift(sensed_img, t.x, t.y);
-
-  cout << "GROUND STATE : -------------------------------------------" << endl;
-  cout << "t[x, y] : " << t << endl;
-
-  compareShiftRegistrationAccuracy(ref_img, sensed_img);
-
-  compareShiftRegistrationSpeed(ref_img, sensed_img);
-
-  // // Warp
-  // Mat imReg;
-  // warpAffine(sensed_img, imReg, transform, ref_img.size());
-  //
-  // // Display results
-  // namedWindow("Reference image", WINDOW_GUI_NORMAL);
-  // resizeWindow("Reference image", 300, 300);
-  // moveWindow("Reference image", 0, 10);
-  // imshow("Reference image", ref_img);
-  //
-  // namedWindow("Sensed image", WINDOW_GUI_NORMAL);
-  // resizeWindow("Sensed image", 300, 300);
-  // moveWindow("Sensed image", 400, 10);
-  // imshow("Sensed image", sensed_img);
-  //
-  // namedWindow("Registered image", WINDOW_GUI_NORMAL);
-  // resizeWindow("Registered image", 300, 300);
-  // moveWindow("Registered image", 800, 10);
-  // imshow("Registered image", imReg);
-  //
-  // waitKey(0);
 }
