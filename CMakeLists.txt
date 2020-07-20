@@ -17,6 +17,7 @@ find_package(yaml-cpp REQUIRED)
 find_package(Boost REQUIRED COMPONENTS system filesystem program_options regex)
 find_package(GTest REQUIRED)
 find_package(PythonLibs REQUIRED)
+find_package(Qt5 REQUIRED COMPONENTS Widgets)
 
 ################################################################################
 #INCLUDES
@@ -26,6 +27,7 @@ include_directories(
     ${YAML_CPP_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/include
     /opt/include/opencv4/
+    ${Qt5Widgets_INCLUDE_DIRS}
 )
 
 include(CTest)
@@ -46,6 +48,7 @@ LIST(APPEND LINK_LIBS
    ${Boost_FILESYSTEM_LIBRARY}
    ${Boost_PROGRAM_OPTIONS_LIBRARY}
    ${Boost_REGEX_LIBRARY}
+   ${Qt5Widgets_LIBRARIES}
 )
 
 LIST(APPEND LINK_TEST_LIBS
