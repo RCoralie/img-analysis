@@ -1,3 +1,4 @@
+#include "edgedetect.hpp"
 #include "registration.hpp"
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>

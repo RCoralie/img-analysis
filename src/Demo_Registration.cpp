@@ -1,7 +1,9 @@
+#include "edgedetect.hpp"
 #include "registration.hpp"
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
 #include <iostream>
+#include <opencv2/highgui.hpp>
 #include <opencv2/opencv.hpp>
 
 using namespace std;
@@ -14,6 +16,8 @@ using namespace boost::program_options;
 
 boost::regex number_regex("-?[0-9]+([\\.][0-9]+)?");
 
+void callbackButton(int state, void *pointer) { printf("ok"); }
+
 int main(int argc, char **argv) {
 
   // Declare the supported options.
@@ -21,7 +25,7 @@ int main(int argc, char **argv) {
   desc.add_options()("help", "produce help message");
   desc.add_options()("correlation", value<vector<string>>()->multitoken(),
                      "image registration using the ECC method : [reference image path] [sensed image path]");
-  desc.add_options()("fourrier-mellin", value<vector<string>>()->multitoken(),
+  desc.add_options()("fmt", value<vector<string>>()->multitoken(),
                      "image registration using the fourier-mellin transform method : [reference image path] [sensed image path]");
   desc.add_options()("orb", value<vector<string>>()->multitoken(),
                      "image registration using the features based ORB method method : [reference image path] [sensed image path]");
@@ -31,7 +35,7 @@ int main(int argc, char **argv) {
                      "motion model used for registration : HOMOGRAPHY, AFFINE, RIGID, TRANSLATION");
   desc.add_options()("features-matching", value<string>()->default_value("RANSAC"),
                      "Feature matching strategy applied for features based methods : RANSAC, LMEDS");
-
+  desc.add_options()("preprocess,P", value<float>()->default_value(0.5), "Canny-Deriche edge detector applied before registration.");
   variables_map vm;
   store(parse_command_line(argc, argv, desc), vm);
   notify(vm);
@@ -46,14 +50,14 @@ int main(int argc, char **argv) {
   vector<string> arg;
   if (vm.count("correlation")) {
     arg = vm["correlation"].as<vector<string>>();
-  } else if (vm.count("fourrier-mellin")) {
-    arg = vm["fourrier-mellin"].as<vector<string>>();
+  } else if (vm.count("fmt")) {
+    arg = vm["fmt"].as<vector<string>>();
   } else if (vm.count("orb")) {
     arg = vm["orb"].as<vector<string>>();
   } else if (vm.count("akaze")) {
     arg = vm["akaze"].as<vector<string>>();
   } else {
-    cout << "Expected 2 arguments : [reference image path] [sensed image path]" << endl;
+    cout << "Expected an argument to specify image registration method : correlation, fmt, orb or akaze. (see --help for more details)" << endl;
     return -1;
   }
   if (arg.size() < 2) {
@@ -69,6 +73,15 @@ int main(int argc, char **argv) {
   if (sensed_img.empty()) {
     cout << "Could not open or find the [sensed image path]" << endl;
     return -1;
+  }
+
+  Mat ref_img_preprocessed = ref_img.clone();
+  Mat sensed_img_preprocessed = sensed_img.clone();
+  if (vm.count("preprocess")) {
+    cv::cvtColor(ref_img, ref_img_preprocessed, cv::COLOR_RGB2GRAY);
+    cv::cvtColor(sensed_img, sensed_img_preprocessed, cv::COLOR_RGB2GRAY);
+    DericheGradient(ref_img_preprocessed, ref_img_preprocessed, 0.5);
+    DericheGradient(sensed_img_preprocessed, sensed_img_preprocessed, 0.5);
   }
 
   Mat warp_mat, warp_img, match_img;
@@ -119,21 +132,21 @@ int main(int argc, char **argv) {
   }
 
   if (vm.count("correlation")) {
-    warp_mat = enhancedCorrelationCoefficientMaximization(ref_img, sensed_img, motion_model);
-    warp_img = imgRegistration(ref_img, sensed_img, warp_mat);
-  } else if (vm.count("fourrier-mellin")) {
-    warp_mat = fourierMellinTransform(ref_img, sensed_img);
-    warp_img = imgRegistration(ref_img, sensed_img, warp_mat);
+    warp_mat = enhancedCorrelationCoefficientMaximization(ref_img_preprocessed, sensed_img_preprocessed, motion_model);
+    warp_img = imgRegistration(ref_img_preprocessed, sensed_img_preprocessed, warp_mat);
+  } else if (vm.count("fmt")) {
+    warp_mat = fourierMellinTransform(ref_img_preprocessed, sensed_img_preprocessed);
+    warp_img = imgRegistration(ref_img_preprocessed, sensed_img_preprocessed, warp_mat);
   } else if (vm.count("orb")) {
     config.detectorDescriptor = FBConfig::ORB_ALGO;
-    warp_mat = featuresBasedMethod(ref_img, sensed_img, config);
-    warp_img = imgRegistration(ref_img, sensed_img, warp_mat);
-    match_img = findMatchFeatures(ref_img, sensed_img).imgOfMatches;
+    warp_mat = featuresBasedMethod(ref_img_preprocessed, sensed_img_preprocessed, config);
+    warp_img = imgRegistration(ref_img_preprocessed, sensed_img_preprocessed, warp_mat);
+    match_img = findMatchFeatures(ref_img_preprocessed, sensed_img_preprocessed).imgOfMatches;
   } else if (vm.count("akaze")) {
     config.detectorDescriptor = FBConfig::AKAZE_ALGO;
-    warp_mat = featuresBasedMethod(ref_img, sensed_img, config);
-    warp_img = imgRegistration(ref_img, sensed_img, warp_mat);
-    match_img = findMatchFeatures(ref_img, sensed_img).imgOfMatches;
+    warp_mat = featuresBasedMethod(ref_img_preprocessed, sensed_img_preprocessed, config);
+    warp_img = imgRegistration(ref_img_preprocessed, sensed_img_preprocessed, warp_mat);
+    match_img = findMatchFeatures(ref_img_preprocessed, sensed_img_preprocessed).imgOfMatches;
   }
 
   // Show final result
@@ -158,6 +171,8 @@ int main(int argc, char **argv) {
     moveWindow("Matches", 100, 500);
     imshow("Matches", match_img);
   }
+
+  createButton("button", callbackButton, NULL, QT_PUSH_BUTTON, 0);
 
   waitKey(0);
 }

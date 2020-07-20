@@ -59,10 +59,10 @@ link_libraries(stdc++fs)
 ################################################################################
 #EXECUTABLE
 #
-add_executable(Demo_Registration ${SRC_REGISTRATION} src/Demo_Registration.cpp)
+add_executable(Demo_Registration ${SRC_REGISTRATION} ${SRC_EDGE_DETECT} src/Demo_Registration.cpp)
 target_link_libraries(Demo_Registration ${LINK_LIBS})
 
-add_executable(Compare_ShiftRegistration ${SRC_REGISTRATION} src/Compare_ShiftRegistration.cpp)
+add_executable(Compare_ShiftRegistration ${SRC_REGISTRATION} ${SRC_EDGE_DETECT} src/Compare_ShiftRegistration.cpp)
 target_link_libraries(Compare_ShiftRegistration ${LINK_LIBS})
 
 add_executable(Demo_EdgeDetector ${SRC_EDGE_DETECT} src/Demo_EdgeDetector.cpp)
