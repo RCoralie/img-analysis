@@ -28,7 +28,6 @@ using namespace registration::featuresbased;
 using namespace registration::corr;
 using namespace boost::program_options;
 
-int size = 400;
 QWidget *match_widget;
 QWidget *preprocess_ref_widget;
 QWidget *preprocess_sensed_widget;
@@ -37,9 +36,15 @@ QLabel *warp_img_pixmap;
 QLabel *match_img_pixmap;
 QLabel *preprocess_ref_img_pixmap;
 QLabel *preprocess_sensed_img_pixmap;
+
 QComboBox *model;
 QComboBox *features_matching;
+QPushButton *matches_btn;
 QDoubleSpinBox *deriche_gamma;
+
+bool display_matches = false;
+int size = 400;
+
 //------------------------------------------------------------------------------
 void preprocess(int state, const Mat &ref_img, const Mat &sensed_img, Mat &ref_img_preprocessed, Mat &sensed_img_preprocessed) {
   ref_img_preprocessed = ref_img.clone();
@@ -119,9 +124,10 @@ void process(const QString &method, const QString &model, const QString &feature
     // cvtColor(match_img, match_img, COLOR_BGR2RGB);
     match_img_pixmap->setPixmap(QPixmap::fromImage(QImage(match_img.data, match_img.cols, match_img.rows, match_img.step, QImage::Format_RGB888))
                                     .scaled(size * 4, size * 2, Qt::KeepAspectRatio));
-    match_widget->setVisible(true);
+    matches_btn->setEnabled(true);
   } else {
     match_widget->setVisible(false);
+    matches_btn->setEnabled(false);
   }
 
   std::cout << "done" << std::endl;
@@ -148,7 +154,6 @@ void registrationMethodChanged(const QString &text) {
     model->setCurrentIndex(2);
     SetComboBoxItemEnabled(model, 3, false);
     features_matching->setEnabled(true);
-
   } else {
     features_matching->setEnabled(false);
     SetComboBoxItemEnabled(model, 3, true);
@@ -247,6 +252,13 @@ int main(int argc, char **argv) {
     process(algo->currentText(), model->currentText(), features_matching->currentText(), ref_img, sensed_img, ref_img_preprocessed,
             sensed_img_preprocessed);
   });
+
+  toolbar_registration->addSeparator();
+
+  matches_btn = new QPushButton(toolbar_registration);
+  toolbar_registration->addWidget(matches_btn);
+  matches_btn->setText("Display matches");
+  QObject::connect(matches_btn, &QPushButton::clicked, [&]() { match_widget->setVisible(true); });
 
   //----------TOOLBAR PREPROCESS
 
