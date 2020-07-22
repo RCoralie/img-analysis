@@ -290,7 +290,7 @@ int main(int argc, char **argv) {
   reference_widget->setLayout(ref_layout);
   QLabel *ref_img_label = new QLabel(reference_widget);
   QLabel *ref_img_pixmap = new QLabel(reference_widget);
-  ref_img_label->setText("Reference Image");
+  ref_img_label->setText("Reference image");
   cvtColor(ref_img, ref_img, COLOR_BGR2RGB);
   ref_img_pixmap->setPixmap(QPixmap::fromImage(QImage(ref_img.data, ref_img.cols, ref_img.rows, ref_img.step, QImage::Format_RGB888))
                                 .scaled(size, size, Qt::KeepAspectRatio));
@@ -303,7 +303,7 @@ int main(int argc, char **argv) {
   sensed_widget->setLayout(sensed_layout);
   QLabel *sensed_img_label = new QLabel(sensed_widget);
   QLabel *sensed_img_pixmap = new QLabel(sensed_widget);
-  sensed_img_label->setText("Sensed Image");
+  sensed_img_label->setText("Sensed image");
   cvtColor(sensed_img, sensed_img, COLOR_BGR2RGB);
   sensed_img_pixmap->setPixmap(QPixmap::fromImage(QImage(sensed_img.data, sensed_img.cols, sensed_img.rows, sensed_img.step, QImage::Format_RGB888))
                                    .scaled(size, size, Qt::KeepAspectRatio));
@@ -316,7 +316,7 @@ int main(int argc, char **argv) {
   warp_widget->setLayout(warp_layout);
   QLabel *warp_img_label = new QLabel(warp_widget);
   warp_img_pixmap = new QLabel(warp_widget);
-  warp_img_label->setText("Warp Image");
+  warp_img_label->setText("Sensed image warped");
   warp_img_label->setAlignment(Qt::AlignCenter);
   warp_layout->addWidget(warp_img_label);
   warp_layout->addWidget(warp_img_pixmap);
@@ -329,7 +329,7 @@ int main(int argc, char **argv) {
   match_widget->setLayout(match_layout);
   QLabel *match_img_label = new QLabel(match_widget);
   match_img_pixmap = new QLabel(match_widget);
-  match_img_label->setText("Match Image");
+  match_img_label->setText("Match image (features based methods registration)");
   match_layout->addWidget(match_img_label);
   match_layout->addWidget(match_img_pixmap);
 
@@ -340,7 +340,7 @@ int main(int argc, char **argv) {
   preprocess_ref_widget->setLayout(preprocess_ref_layout);
   QLabel *preprocess_ref_img_label = new QLabel(preprocess_ref_widget);
   preprocess_ref_img_pixmap = new QLabel(preprocess_ref_widget);
-  preprocess_ref_img_label->setText("Preprocessed Ref Image");
+  preprocess_ref_img_label->setText("Preprocessed reference image");
   preprocess_ref_layout->addWidget(preprocess_ref_img_label);
   preprocess_ref_layout->addWidget(preprocess_ref_img_pixmap);
   main_layout->addWidget(preprocess_ref_widget, 1, 0);
@@ -350,7 +350,7 @@ int main(int argc, char **argv) {
   preprocess_sensed_widget->setLayout(preprocess_sensed_layout);
   QLabel *preprocess_sensed_img_label = new QLabel(preprocess_sensed_widget);
   preprocess_sensed_img_pixmap = new QLabel(preprocess_sensed_widget);
-  preprocess_sensed_img_label->setText("Preprocessed Sensed Image");
+  preprocess_sensed_img_label->setText("Preprocessed sensed image");
   preprocess_sensed_layout->addWidget(preprocess_sensed_img_label);
   preprocess_sensed_layout->addWidget(preprocess_sensed_img_pixmap);
   main_layout->addWidget(preprocess_sensed_widget, 1, 1);
