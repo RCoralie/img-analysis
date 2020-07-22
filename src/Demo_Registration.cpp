@@ -28,6 +28,11 @@ using namespace registration::featuresbased;
 using namespace registration::corr;
 using namespace boost::program_options;
 
+const int size = 400;
+
+Mat ref_img, sensed_img, ref_img_preprocessed, sensed_img_preprocessed;
+bool preprocessing = false;
+
 QWidget *match_widget;
 QWidget *preprocess_ref_widget;
 QWidget *preprocess_sensed_widget;
@@ -36,26 +41,24 @@ QLabel *warp_img_pixmap;
 QLabel *match_img_pixmap;
 QLabel *preprocess_ref_img_pixmap;
 QLabel *preprocess_sensed_img_pixmap;
+QLabel *sensed_img_pixmap;
 
 QComboBox *model_box;
 QComboBox *matching_method_box;
 QPushButton *matches_btn;
 QDoubleSpinBox *deriche_gamma;
 
-bool display_matches = false;
-int size = 400;
-
 //------------------------------------------------------------------------------
-void preprocess(int state, const Mat &ref_img, const Mat &sensed_img, Mat &ref_img_preprocessed, Mat &sensed_img_preprocessed) {
+void preprocess() {
+
   ref_img_preprocessed = ref_img.clone();
   sensed_img_preprocessed = sensed_img.clone();
-  if (state == 0) {
-    preprocess_ref_widget->setVisible(false);
-    preprocess_sensed_widget->setVisible(false);
-    deriche_gamma->setEnabled(false);
 
-    std::cout << state << std::endl;
-  } else {
+  preprocess_ref_widget->setVisible(preprocessing);
+  preprocess_sensed_widget->setVisible(preprocessing);
+  deriche_gamma->setEnabled(preprocessing);
+
+  if (preprocessing) {
     DericheGradient(ref_img_preprocessed, ref_img_preprocessed, deriche_gamma->value());
     DericheGradient(sensed_img_preprocessed, sensed_img_preprocessed, deriche_gamma->value());
     preprocess_ref_img_pixmap->setPixmap(QPixmap::fromImage(QImage(ref_img_preprocessed.data, ref_img_preprocessed.cols, ref_img_preprocessed.rows,
@@ -65,14 +68,11 @@ void preprocess(int state, const Mat &ref_img, const Mat &sensed_img, Mat &ref_i
         QPixmap::fromImage(QImage(sensed_img_preprocessed.data, sensed_img_preprocessed.cols, sensed_img_preprocessed.rows,
                                   sensed_img_preprocessed.step, QImage::Format_RGB888))
             .scaled(size, size, Qt::KeepAspectRatio));
-    preprocess_ref_widget->setVisible(true);
-    preprocess_sensed_widget->setVisible(true);
-    deriche_gamma->setEnabled(true);
   }
 }
+
 //------------------------------------------------------------------------------
-void process(const QString &method, const QString &model, const QString &features_matching, const Mat &ref_img, const Mat &sensed_img,
-             Mat &ref_img_preprocessed, Mat &sensed_img_preprocessed) {
+void process(const QString &method, const QString &model, const QString &features_matching) {
 
   std::cout << "Process registration ..." << std::endl;
 
@@ -134,6 +134,76 @@ void process(const QString &method, const QString &model, const QString &feature
 }
 
 //------------------------------------------------------------------------------
+void compareShiftRegistration(bool correlation_is_checked, bool orb_is_checked, bool akaze_is_checked, bool fmt_is_checked, int occurrences_nb) {
+
+  clock_t t0;
+  double duration;
+
+  if (correlation_is_checked) { // enhancedCorrelationCoefficientMaximization
+    Mat corr_translation = enhancedCorrelationCoefficientMaximization(ref_img, sensed_img, MOTION_TRANSLATION);
+    cout << "ECC (TRANSLATION MODEL): ---------------------------------" << endl;
+    cout << "t[x, y] : " << extractTranslationFromAffine(corr_translation) << endl;
+    t0 = clock();
+    for (int i = 0; i <= occurrences_nb; i++) {
+      Mat corr_translation = enhancedCorrelationCoefficientMaximization(ref_img, sensed_img, MOTION_TRANSLATION);
+    }
+    duration = ((clock() - t0) / (double)CLOCKS_PER_SEC) / occurrences_nb;
+    cout << "mean execution time on " << occurrences_nb << " runs : " << duration << " secondes" << endl;
+  }
+
+  if (orb_is_checked) { // Features features methods
+    FBConfig config_orb_rigid;
+    config_orb_rigid.model = FBConfig::AFFINE_PARTIAL;
+    config_orb_rigid.detectorDescriptor = FBConfig::ORB_ALGO;
+    Mat tr_orb_rigid = featuresBasedMethod(ref_img, sensed_img, config_orb_rigid);
+    cout << "ORB (RIGID MODEL) : --------------------------------------" << endl;
+    cout << "t[x, y] : " << extractTranslationFromAffine(tr_orb_rigid) << endl;
+    t0 = clock();
+    for (int i = 0; i <= occurrences_nb; i++) {
+      Mat tr_orb_rigid = featuresBasedMethod(ref_img, sensed_img, config_orb_rigid);
+    }
+    duration = ((clock() - t0) / (double)CLOCKS_PER_SEC) / occurrences_nb;
+    cout << "mean execution time on " << occurrences_nb << " runs : " << duration << " secondes" << endl;
+  }
+
+  if (akaze_is_checked) { // Features features methods
+    FBConfig config_akaze_rigid;
+    config_akaze_rigid.model = FBConfig::AFFINE_PARTIAL;
+    config_akaze_rigid.detectorDescriptor = FBConfig::AKAZE_ALGO;
+    Mat tr_akaze_rigid = featuresBasedMethod(ref_img, sensed_img, config_akaze_rigid);
+    cout << "AKAZE (RIGID MODEL) : ------------------------------------" << endl;
+    cout << "t[x, y] : " << extractTranslationFromAffine(tr_akaze_rigid) << endl;
+    t0 = clock();
+    for (int i = 0; i <= occurrences_nb; i++) {
+      Mat tr_akaze_rigid = featuresBasedMethod(ref_img, sensed_img, config_akaze_rigid);
+    }
+    duration = ((clock() - t0) / (double)CLOCKS_PER_SEC) / occurrences_nb;
+    cout << "mean execution time on " << occurrences_nb << " runs : " << duration << " secondes" << endl;
+  }
+
+  if (fmt_is_checked) { // Fourier-mellin transformation
+    Mat fmt = fourierMellinTransform(ref_img, sensed_img);
+    cout << "FOURIER-MELLIN (AFFINE MODEL): ---------------------------" << endl;
+    cout << "t[x, y] : " << extractTranslationFromAffine(fmt) << endl;
+    t0 = clock();
+    for (int i = 0; i <= occurrences_nb; i++) {
+      Mat fmt = fourierMellinTransform(ref_img, sensed_img);
+    }
+    duration = ((clock() - t0) / (double)CLOCKS_PER_SEC) / occurrences_nb;
+    cout << "mean execution time on " << occurrences_nb << " runs : " << duration << " secondes" << endl;
+  }
+}
+
+//------------------------------------------------------------------------------
+void shift(const cv::Mat &img, cv::Mat &img_shifted, double x, double y) {
+  cv::Mat M = (cv::Mat_<double>(2, 3) << 1, 0, x, 0, 1, y);
+  cv::warpAffine(img, img_shifted, M, img.size(), INTER_LINEAR, BORDER_REPLICATE);
+  sensed_img_pixmap->setPixmap(
+      QPixmap::fromImage(QImage(img_shifted.data, img_shifted.cols, img_shifted.rows, img_shifted.step, QImage::Format_RGB888))
+          .scaled(size, size, Qt::KeepAspectRatio));
+}
+
+//------------------------------------------------------------------------------
 void SetComboBoxItemEnabled(QComboBox *box, int index, bool enabled) {
   auto *model = qobject_cast<QStandardItemModel *>(box->model());
   assert(model);
@@ -160,7 +230,7 @@ void registrationMethodChanged(const QString &text) {
   }
 }
 
-//------------------------------------------------------------------------------
+//----------------------------------------------------------------------------//
 int main(int argc, char **argv) {
 
   // Declare the supported options.
@@ -168,6 +238,8 @@ int main(int argc, char **argv) {
   desc.add_options()("help", "produce help message");
 
   desc.add_options()("registration,R", value<vector<string>>()->multitoken(), "image registration : [reference image path] [sensed image path]");
+  desc.add_options()("benchmark,B", value<vector<string>>()->multitoken(),
+                     "compare accuracy and execution time of registration methods on ground state computed : [reference image path]");
   variables_map vm;
   store(parse_command_line(argc, argv, desc), vm);
   notify(vm);
@@ -179,30 +251,56 @@ int main(int argc, char **argv) {
   }
 
   // --------------------------------------------------------------------------
+  bool benchmark = false;
   vector<string> arg;
+
   if (vm.count("registration")) {
     arg = vm["registration"].as<vector<string>>();
+    if (arg.size() < 2) {
+      cout << "Expected at least 2 arguments : [reference image path] [sensed image path]" << endl;
+      return -1;
+    }
+    ref_img = imread(arg[0]);
+    if (ref_img.empty()) {
+      cout << "Could not open or find the [reference image path]" << endl;
+      return -1;
+    }
+    sensed_img = imread(arg[1]);
+    if (sensed_img.empty()) {
+      cout << "Could not open or find the [sensed image path]" << endl;
+      return -1;
+    }
+  } else if (vm.count("benchmark")) {
+    arg = vm["benchmark"].as<vector<string>>();
+    if (arg.size() < 1) {
+      cout << "Expected at least 1 argument : [reference image path]" << endl;
+      return -1;
+    }
+    ref_img = imread(arg[0]);
+    if (ref_img.empty()) {
+      cout << "Could not open or find the [reference image path]" << endl;
+      return -1;
+    }
+    sensed_img = ref_img.clone();
+    benchmark = true;
   } else {
     cout << "See --help for more details." << endl;
     return -1;
   }
-  if (arg.size() < 2) {
-    cout << "Expected at least 2 arguments : [reference image path] [sensed image path]" << endl;
-    return -1;
-  }
-  Mat ref_img = imread(arg[0]);
-  if (ref_img.empty()) {
-    cout << "Could not open or find the [reference image path]" << endl;
-    return -1;
-  }
-  Mat sensed_img = imread(arg[1]);
-  if (sensed_img.empty()) {
-    cout << "Could not open or find the [sensed image path]" << endl;
-    return -1;
-  }
 
-  Mat ref_img_preprocessed = ref_img.clone();
-  Mat sensed_img_preprocessed = sensed_img.clone();
+  ref_img_preprocessed = ref_img.clone();
+  sensed_img_preprocessed = sensed_img.clone();
+
+  bool correlation_is_checked = false;
+  bool orb_is_checked = true;
+  bool akaze_is_checked = true;
+  bool fmt_is_checked = true;
+  double tr_x = 0;
+  double tr_y = 0;
+
+  QString registration_algo = "ORB";
+  QString registration_model = "RIGID";
+  QString matching_method = "RANSAC";
 
   // ---------------------------------------------------------------------------
   QApplication application(argc, argv);
@@ -218,47 +316,107 @@ int main(int argc, char **argv) {
 
   QToolBar *toolbar_registration = main_window.addToolBar("toolbar for image registration");
 
-  QComboBox *algo = new QComboBox(toolbar_registration);
-  toolbar_registration->addWidget(algo);
-  algo->addItem("Correlation");
-  algo->addItem("ORB");
-  algo->addItem("AKAZE");
-  algo->addItem("Fourier-Mellin");
-  algo->setCurrentIndex(1);
-  QObject::connect(algo, QOverload<const QString &>::of(&QComboBox::currentTextChanged),
-                   [=](const QString &text) { registrationMethodChanged(text); });
+  if (benchmark) {
+    QDoubleSpinBox *translation_x = new QDoubleSpinBox(toolbar_registration);
+    translation_x->setRange(0, 1000);
+    translation_x->setPrefix("x:");
+    translation_x->setSingleStep(1);
+    translation_x->setValue(tr_x);
+    toolbar_registration->addWidget(translation_x);
+    QObject::connect(translation_x, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [&](double d) {
+      tr_x = d;
+      shift(ref_img, sensed_img, tr_x, tr_y);
+      preprocess();
+    });
 
-  model_box = new QComboBox(toolbar_registration);
-  toolbar_registration->addWidget(model_box);
-  model_box->addItem("HOMOGRAPHY");
-  model_box->addItem("AFFINE");
-  model_box->addItem("RIGID");
-  model_box->addItem("TRANSLATION");
-  model_box->setCurrentIndex(2);
-  SetComboBoxItemEnabled(model_box, 3, false);
+    QDoubleSpinBox *translation_y = new QDoubleSpinBox(toolbar_registration);
+    translation_y->setRange(0, 1000);
+    translation_y->setPrefix("y:");
+    translation_y->setSingleStep(1);
+    translation_y->setValue(tr_y);
+    toolbar_registration->addWidget(translation_y);
+    QObject::connect(translation_y, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [&](double d) {
+      tr_y = d;
+      shift(ref_img, sensed_img, tr_x, tr_y);
+      preprocess();
+    });
 
-  matching_method_box = new QComboBox(toolbar_registration);
-  toolbar_registration->addWidget(matching_method_box);
-  matching_method_box->addItem("RANSAC");
-  matching_method_box->addItem("LMEDS");
-  matching_method_box->setCurrentIndex(0);
+    QCheckBox *correlation_btn = new QCheckBox(toolbar_registration);
+    toolbar_registration->addWidget(correlation_btn);
+    correlation_btn->setText("Correlation");
+    correlation_btn->setChecked(correlation_is_checked);
+    QObject::connect(correlation_btn, &QCheckBox::stateChanged, [&](int state) { correlation_is_checked = (state == 0) ? false : true; });
 
-  toolbar_registration->addSeparator();
+    QCheckBox *orb_btn = new QCheckBox(toolbar_registration);
+    toolbar_registration->addWidget(orb_btn);
+    orb_btn->setText("ORB");
+    orb_btn->setChecked(orb_is_checked);
+    QObject::connect(correlation_btn, &QCheckBox::stateChanged, [&](int state) { orb_is_checked = (state == 0) ? false : true; });
 
-  QPushButton *process_btn = new QPushButton(toolbar_registration);
-  toolbar_registration->addWidget(process_btn);
-  process_btn->setText("Process");
-  QObject::connect(process_btn, &QPushButton::clicked, [&]() {
-    process(algo->currentText(), model_box->currentText(), matching_method_box->currentText(), ref_img, sensed_img, ref_img_preprocessed,
-            sensed_img_preprocessed);
-  });
+    QCheckBox *akaze_btn = new QCheckBox(toolbar_registration);
+    toolbar_registration->addWidget(akaze_btn);
+    akaze_btn->setText("AKAZE");
+    akaze_btn->setChecked(akaze_is_checked);
+    QObject::connect(correlation_btn, &QCheckBox::stateChanged, [&](int state) { akaze_is_checked = (state == 0) ? false : true; });
 
-  toolbar_registration->addSeparator();
+    QCheckBox *fmt_btn = new QCheckBox(toolbar_registration);
+    toolbar_registration->addWidget(fmt_btn);
+    fmt_btn->setText("Fourier-Mellin");
+    fmt_btn->setChecked(fmt_is_checked);
+    QObject::connect(correlation_btn, &QCheckBox::stateChanged, [&](int state) { fmt_is_checked = (state == 0) ? false : true; });
 
-  matches_btn = new QPushButton(toolbar_registration);
-  toolbar_registration->addWidget(matches_btn);
-  matches_btn->setText("Display matches");
-  QObject::connect(matches_btn, &QPushButton::clicked, [&]() { match_widget->setVisible(true); });
+    QPushButton *process_btn = new QPushButton(toolbar_registration);
+    toolbar_registration->addWidget(process_btn);
+    process_btn->setText("Compare");
+    QObject::connect(process_btn, &QPushButton::clicked,
+                     [&]() { compareShiftRegistration(correlation_is_checked, orb_is_checked, akaze_is_checked, fmt_is_checked, 100); });
+
+  } else {
+    QComboBox *registration_algo_box = new QComboBox(toolbar_registration);
+    toolbar_registration->addWidget(registration_algo_box);
+    registration_algo_box->addItem("Correlation");
+    registration_algo_box->addItem("ORB");
+    registration_algo_box->addItem("AKAZE");
+    registration_algo_box->addItem("Fourier-Mellin");
+    registration_algo_box->setCurrentIndex(1);
+    QObject::connect(registration_algo_box, QOverload<const QString &>::of(&QComboBox::currentTextChanged), [&](const QString &text) {
+      registration_algo = text;
+      registrationMethodChanged(text);
+    });
+
+    model_box = new QComboBox(toolbar_registration);
+    toolbar_registration->addWidget(model_box);
+    model_box->addItem("HOMOGRAPHY");
+    model_box->addItem("AFFINE");
+    model_box->addItem("RIGID");
+    model_box->addItem("TRANSLATION");
+    model_box->setCurrentIndex(2);
+    SetComboBoxItemEnabled(model_box, 3, false);
+    QObject::connect(model_box, QOverload<const QString &>::of(&QComboBox::currentTextChanged),
+                     [&](const QString &text) { registration_model = text; });
+
+    matching_method_box = new QComboBox(toolbar_registration);
+    toolbar_registration->addWidget(matching_method_box);
+    matching_method_box->addItem("RANSAC");
+    matching_method_box->addItem("LMEDS");
+    matching_method_box->setCurrentIndex(0);
+    QObject::connect(matching_method_box, QOverload<const QString &>::of(&QComboBox::currentTextChanged),
+                     [&](const QString &text) { matching_method = text; });
+
+    toolbar_registration->addSeparator();
+
+    QPushButton *process_btn = new QPushButton(toolbar_registration);
+    toolbar_registration->addWidget(process_btn);
+    process_btn->setText("Process");
+    QObject::connect(process_btn, &QPushButton::clicked, [&]() { process(registration_algo, registration_model, matching_method); });
+
+    toolbar_registration->addSeparator();
+
+    matches_btn = new QPushButton(toolbar_registration);
+    toolbar_registration->addWidget(matches_btn);
+    matches_btn->setText("Display matches");
+    QObject::connect(matches_btn, &QPushButton::clicked, [&]() { match_widget->setVisible(true); });
+  }
 
   //----------TOOLBAR PREPROCESS
 
@@ -269,7 +427,8 @@ int main(int argc, char **argv) {
   toolbar_preprocess->addWidget(preprocess_btn);
   preprocess_btn->setText("Preprocess");
   QObject::connect(preprocess_btn, &QCheckBox::stateChanged, [&](int state) {
-    preprocess(state, ref_img, sensed_img, ref_img_preprocessed, sensed_img_preprocessed);
+    preprocessing = (state == 0) ? false : true;
+    preprocess();
     main_window.adjustSize();
   });
 
@@ -280,8 +439,7 @@ int main(int argc, char **argv) {
   deriche_gamma->setValue(0.5);
   deriche_gamma->setEnabled(false);
   toolbar_preprocess->addWidget(deriche_gamma);
-  QObject::connect(deriche_gamma, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
-                   [&](double d) { preprocess(true, ref_img, sensed_img, ref_img_preprocessed, sensed_img_preprocessed); });
+  QObject::connect(deriche_gamma, QOverload<double>::of(&QDoubleSpinBox::valueChanged), [&](double d) { preprocess(); });
 
   //----------DISPLAY IMG
 
@@ -302,7 +460,7 @@ int main(int argc, char **argv) {
   QVBoxLayout *sensed_layout = new QVBoxLayout();
   sensed_widget->setLayout(sensed_layout);
   QLabel *sensed_img_label = new QLabel(sensed_widget);
-  QLabel *sensed_img_pixmap = new QLabel(sensed_widget);
+  sensed_img_pixmap = new QLabel(sensed_widget);
   sensed_img_label->setText("Sensed image");
   cvtColor(sensed_img, sensed_img, COLOR_BGR2RGB);
   sensed_img_pixmap->setPixmap(QPixmap::fromImage(QImage(sensed_img.data, sensed_img.cols, sensed_img.rows, sensed_img.step, QImage::Format_RGB888))
@@ -311,27 +469,31 @@ int main(int argc, char **argv) {
   sensed_layout->addWidget(sensed_img_pixmap);
   main_layout->addWidget(sensed_widget, 0, 1);
 
-  QWidget *warp_widget = new QWidget(main_widget);
-  QVBoxLayout *warp_layout = new QVBoxLayout();
-  warp_widget->setLayout(warp_layout);
-  QLabel *warp_img_label = new QLabel(warp_widget);
-  warp_img_pixmap = new QLabel(warp_widget);
-  warp_img_label->setText("Sensed image warped");
-  warp_img_label->setAlignment(Qt::AlignCenter);
-  warp_layout->addWidget(warp_img_label);
-  warp_layout->addWidget(warp_img_pixmap);
-  main_layout->addWidget(warp_widget, 0, 2, 2, 2);
+  if (!benchmark) {
+    QWidget *warp_widget = new QWidget(main_widget);
+    QVBoxLayout *warp_layout = new QVBoxLayout();
+    warp_widget->setLayout(warp_layout);
+    QLabel *warp_img_label = new QLabel(warp_widget);
+    warp_img_pixmap = new QLabel(warp_widget);
+    warp_img_label->setText("Sensed image warped");
+    warp_img_label->setAlignment(Qt::AlignCenter);
+    warp_layout->addWidget(warp_img_label);
+    warp_layout->addWidget(warp_img_pixmap);
+    main_layout->addWidget(warp_widget, 0, 2, 2, 2);
+  }
 
   //----------MATCH IMAGE FOR FEATURES BASED REGISTRATION ONLY
 
-  match_widget = new QWidget();
-  QVBoxLayout *match_layout = new QVBoxLayout();
-  match_widget->setLayout(match_layout);
-  QLabel *match_img_label = new QLabel(match_widget);
-  match_img_pixmap = new QLabel(match_widget);
-  match_img_label->setText("Match image (features based methods registration)");
-  match_layout->addWidget(match_img_label);
-  match_layout->addWidget(match_img_pixmap);
+  if (!benchmark) {
+    match_widget = new QWidget();
+    QVBoxLayout *match_layout = new QVBoxLayout();
+    match_widget->setLayout(match_layout);
+    QLabel *match_img_label = new QLabel(match_widget);
+    match_img_pixmap = new QLabel(match_widget);
+    match_img_label->setText("Match image (features based methods registration)");
+    match_layout->addWidget(match_img_label);
+    match_layout->addWidget(match_img_pixmap);
+  }
 
   //----------PREPROCESSED IMAGE
 
@@ -355,12 +517,10 @@ int main(int argc, char **argv) {
   preprocess_sensed_layout->addWidget(preprocess_sensed_img_pixmap);
   main_layout->addWidget(preprocess_sensed_widget, 1, 1);
 
-  //---------
-
-  preprocess(false, ref_img, sensed_img, ref_img_preprocessed, sensed_img_preprocessed);
-  process(algo->currentText(), model_box->currentText(), matching_method_box->currentText(), ref_img, sensed_img, ref_img_preprocessed,
-          sensed_img_preprocessed);
-
+  preprocess();
+  if (!benchmark) {
+    process(registration_algo, registration_model, matching_method);
+  }
   main_window.show();
 
   return application.exec();
