@@ -37,8 +37,8 @@ QLabel *match_img_pixmap;
 QLabel *preprocess_ref_img_pixmap;
 QLabel *preprocess_sensed_img_pixmap;
 
-QComboBox *model;
-QComboBox *features_matching;
+QComboBox *model_box;
+QComboBox *matching_method_box;
 QPushButton *matches_btn;
 QDoubleSpinBox *deriche_gamma;
 
@@ -134,8 +134,8 @@ void process(const QString &method, const QString &model, const QString &feature
 }
 
 //------------------------------------------------------------------------------
-void SetComboBoxItemEnabled(QComboBox *comboBox, int index, bool enabled) {
-  auto *model = qobject_cast<QStandardItemModel *>(comboBox->model());
+void SetComboBoxItemEnabled(QComboBox *box, int index, bool enabled) {
+  auto *model = qobject_cast<QStandardItemModel *>(box->model());
   assert(model);
   if (!model)
     return;
@@ -151,12 +151,12 @@ void SetComboBoxItemEnabled(QComboBox *comboBox, int index, bool enabled) {
 void registrationMethodChanged(const QString &text) {
 
   if (text == QString("ORB") || text == QString("AKAZE")) {
-    model->setCurrentIndex(2);
-    SetComboBoxItemEnabled(model, 3, false);
-    features_matching->setEnabled(true);
+    model_box->setCurrentIndex(2);
+    SetComboBoxItemEnabled(model_box, 3, false);
+    matching_method_box->setEnabled(true);
   } else {
-    features_matching->setEnabled(false);
-    SetComboBoxItemEnabled(model, 3, true);
+    matching_method_box->setEnabled(false);
+    SetComboBoxItemEnabled(model_box, 3, true);
   }
 }
 
@@ -206,17 +206,17 @@ int main(int argc, char **argv) {
 
   // ---------------------------------------------------------------------------
   QApplication application(argc, argv);
-  QMainWindow mainWindow;
+  QMainWindow main_window;
 
-  QWidget *mainWidget = new QWidget();
-  QGridLayout *mainLayout = new QGridLayout();
-  mainLayout->setSizeConstraint(QLayout::SetFixedSize);
-  mainWidget->setLayout(mainLayout);
-  mainWindow.setCentralWidget(mainWidget);
+  QWidget *main_widget = new QWidget();
+  QGridLayout *main_layout = new QGridLayout();
+  main_layout->setSizeConstraint(QLayout::SetFixedSize);
+  main_widget->setLayout(main_layout);
+  main_window.setCentralWidget(main_widget);
 
   //---------TOOLBAR REGISTRATION
 
-  QToolBar *toolbar_registration = mainWindow.addToolBar("toolbar for image registration");
+  QToolBar *toolbar_registration = main_window.addToolBar("toolbar for image registration");
 
   QComboBox *algo = new QComboBox(toolbar_registration);
   toolbar_registration->addWidget(algo);
@@ -228,20 +228,20 @@ int main(int argc, char **argv) {
   QObject::connect(algo, QOverload<const QString &>::of(&QComboBox::currentTextChanged),
                    [=](const QString &text) { registrationMethodChanged(text); });
 
-  model = new QComboBox(toolbar_registration);
-  toolbar_registration->addWidget(model);
-  model->addItem("HOMOGRAPHY");
-  model->addItem("AFFINE");
-  model->addItem("RIGID");
-  model->addItem("TRANSLATION");
-  model->setCurrentIndex(2);
-  SetComboBoxItemEnabled(model, 3, false);
+  model_box = new QComboBox(toolbar_registration);
+  toolbar_registration->addWidget(model_box);
+  model_box->addItem("HOMOGRAPHY");
+  model_box->addItem("AFFINE");
+  model_box->addItem("RIGID");
+  model_box->addItem("TRANSLATION");
+  model_box->setCurrentIndex(2);
+  SetComboBoxItemEnabled(model_box, 3, false);
 
-  features_matching = new QComboBox(toolbar_registration);
-  toolbar_registration->addWidget(features_matching);
-  features_matching->addItem("RANSAC");
-  features_matching->addItem("LMEDS");
-  features_matching->setCurrentIndex(0);
+  matching_method_box = new QComboBox(toolbar_registration);
+  toolbar_registration->addWidget(matching_method_box);
+  matching_method_box->addItem("RANSAC");
+  matching_method_box->addItem("LMEDS");
+  matching_method_box->setCurrentIndex(0);
 
   toolbar_registration->addSeparator();
 
@@ -249,7 +249,7 @@ int main(int argc, char **argv) {
   toolbar_registration->addWidget(process_btn);
   process_btn->setText("Process");
   QObject::connect(process_btn, &QPushButton::clicked, [&]() {
-    process(algo->currentText(), model->currentText(), features_matching->currentText(), ref_img, sensed_img, ref_img_preprocessed,
+    process(algo->currentText(), model_box->currentText(), matching_method_box->currentText(), ref_img, sensed_img, ref_img_preprocessed,
             sensed_img_preprocessed);
   });
 
@@ -262,15 +262,15 @@ int main(int argc, char **argv) {
 
   //----------TOOLBAR PREPROCESS
 
-  QToolBar *toolbar_preprocess = mainWindow.addToolBar("toolbar for preprocessing");
-  mainWindow.insertToolBarBreak(toolbar_preprocess);
+  QToolBar *toolbar_preprocess = main_window.addToolBar("toolbar for preprocessing");
+  main_window.insertToolBarBreak(toolbar_preprocess);
 
   QCheckBox *preprocess_btn = new QCheckBox(toolbar_preprocess);
   toolbar_preprocess->addWidget(preprocess_btn);
   preprocess_btn->setText("Preprocess");
   QObject::connect(preprocess_btn, &QCheckBox::stateChanged, [&](int state) {
     preprocess(state, ref_img, sensed_img, ref_img_preprocessed, sensed_img_preprocessed);
-    mainWindow.adjustSize();
+    main_window.adjustSize();
   });
 
   deriche_gamma = new QDoubleSpinBox(toolbar_preprocess);
@@ -285,7 +285,7 @@ int main(int argc, char **argv) {
 
   //----------DISPLAY IMG
 
-  QWidget *reference_widget = new QWidget(mainWidget);
+  QWidget *reference_widget = new QWidget(main_widget);
   QVBoxLayout *ref_layout = new QVBoxLayout();
   reference_widget->setLayout(ref_layout);
   QLabel *ref_img_label = new QLabel(reference_widget);
@@ -296,9 +296,9 @@ int main(int argc, char **argv) {
                                 .scaled(size, size, Qt::KeepAspectRatio));
   ref_layout->addWidget(ref_img_label);
   ref_layout->addWidget(ref_img_pixmap);
-  mainLayout->addWidget(reference_widget, 0, 0);
+  main_layout->addWidget(reference_widget, 0, 0);
 
-  QWidget *sensed_widget = new QWidget(mainWidget);
+  QWidget *sensed_widget = new QWidget(main_widget);
   QVBoxLayout *sensed_layout = new QVBoxLayout();
   sensed_widget->setLayout(sensed_layout);
   QLabel *sensed_img_label = new QLabel(sensed_widget);
@@ -309,9 +309,9 @@ int main(int argc, char **argv) {
                                    .scaled(size, size, Qt::KeepAspectRatio));
   sensed_layout->addWidget(sensed_img_label);
   sensed_layout->addWidget(sensed_img_pixmap);
-  mainLayout->addWidget(sensed_widget, 0, 1);
+  main_layout->addWidget(sensed_widget, 0, 1);
 
-  QWidget *warp_widget = new QWidget(mainWidget);
+  QWidget *warp_widget = new QWidget(main_widget);
   QVBoxLayout *warp_layout = new QVBoxLayout();
   warp_widget->setLayout(warp_layout);
   QLabel *warp_img_label = new QLabel(warp_widget);
@@ -320,7 +320,7 @@ int main(int argc, char **argv) {
   warp_img_label->setAlignment(Qt::AlignCenter);
   warp_layout->addWidget(warp_img_label);
   warp_layout->addWidget(warp_img_pixmap);
-  mainLayout->addWidget(warp_widget, 0, 2, 2, 2);
+  main_layout->addWidget(warp_widget, 0, 2, 2, 2);
 
   //----------MATCH IMAGE FOR FEATURES BASED REGISTRATION ONLY
 
@@ -335,7 +335,7 @@ int main(int argc, char **argv) {
 
   //----------PREPROCESSED IMAGE
 
-  preprocess_ref_widget = new QWidget(mainWidget);
+  preprocess_ref_widget = new QWidget(main_widget);
   QVBoxLayout *preprocess_ref_layout = new QVBoxLayout();
   preprocess_ref_widget->setLayout(preprocess_ref_layout);
   QLabel *preprocess_ref_img_label = new QLabel(preprocess_ref_widget);
@@ -343,9 +343,9 @@ int main(int argc, char **argv) {
   preprocess_ref_img_label->setText("Preprocessed Ref Image");
   preprocess_ref_layout->addWidget(preprocess_ref_img_label);
   preprocess_ref_layout->addWidget(preprocess_ref_img_pixmap);
-  mainLayout->addWidget(preprocess_ref_widget, 1, 0);
+  main_layout->addWidget(preprocess_ref_widget, 1, 0);
 
-  preprocess_sensed_widget = new QWidget(mainWidget);
+  preprocess_sensed_widget = new QWidget(main_widget);
   QVBoxLayout *preprocess_sensed_layout = new QVBoxLayout();
   preprocess_sensed_widget->setLayout(preprocess_sensed_layout);
   QLabel *preprocess_sensed_img_label = new QLabel(preprocess_sensed_widget);
@@ -353,15 +353,15 @@ int main(int argc, char **argv) {
   preprocess_sensed_img_label->setText("Preprocessed Sensed Image");
   preprocess_sensed_layout->addWidget(preprocess_sensed_img_label);
   preprocess_sensed_layout->addWidget(preprocess_sensed_img_pixmap);
-  mainLayout->addWidget(preprocess_sensed_widget, 1, 1);
+  main_layout->addWidget(preprocess_sensed_widget, 1, 1);
 
   //---------
 
   preprocess(false, ref_img, sensed_img, ref_img_preprocessed, sensed_img_preprocessed);
-  process(algo->currentText(), model->currentText(), features_matching->currentText(), ref_img, sensed_img, ref_img_preprocessed,
+  process(algo->currentText(), model_box->currentText(), matching_method_box->currentText(), ref_img, sensed_img, ref_img_preprocessed,
           sensed_img_preprocessed);
 
-  mainWindow.show();
+  main_window.show();
 
   return application.exec();
 }
