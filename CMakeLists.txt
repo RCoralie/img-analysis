@@ -63,7 +63,7 @@ link_libraries(stdc++fs)
 ################################################################################
 #EXECUTABLE
 #
-add_executable(Demo_Registration ${SRC_REGISTRATION} ${SRC_EDGE_DETECT} src/Demo_Registration.cpp)
+add_executable(Demo_Registration ${SRC_SHARED} ${SRC_REGISTRATION} ${SRC_EDGE_DETECT} src/Demo_Registration.cpp)
 target_link_libraries(Demo_Registration ${LINK_LIBS})
 
 add_executable(Demo_EdgeDetector ${SRC_EDGE_DETECT} src/Demo_EdgeDetector.cpp)

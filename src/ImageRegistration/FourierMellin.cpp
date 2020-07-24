@@ -15,9 +15,11 @@
 
 #include "opencv2/opencv.hpp"
 #include "registration.hpp"
+#include "tools.hpp"
 
 using namespace std;
 using namespace cv;
+using namespace transform_mat;
 
 namespace registration {
 

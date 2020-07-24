@@ -1,5 +1,6 @@
 #include "edgedetect.hpp"
 #include "registration.hpp"
+#include "tools.hpp"
 #include <QApplication>
 #include <QCheckBox>
 #include <QComboBox>
@@ -27,6 +28,7 @@ using namespace registration::fmt;
 using namespace registration::featuresbased;
 using namespace registration::corr;
 using namespace boost::program_options;
+using namespace transform_mat;
 
 const int size = 400;
 
@@ -415,7 +417,7 @@ int main(int argc, char **argv) {
     toolbar_registration->addWidget(process_btn);
     process_btn->setText("Compare");
     QObject::connect(process_btn, &QPushButton::clicked,
-                     [&]() { compareShiftRegistration(correlation_is_checked, orb_is_checked, akaze_is_checked, fmt_is_checked, 100); });
+                     [&]() { compareShiftRegistration(correlation_is_checked, orb_is_checked, akaze_is_checked, fmt_is_checked, 1); });
 
     toolbar_registration->addSeparator();
 
