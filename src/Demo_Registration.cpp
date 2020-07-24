@@ -30,10 +30,11 @@ using namespace boost::program_options;
 
 const int size = 400;
 
-Mat ref_img, sensed_img, ref_img_preprocessed, sensed_img_preprocessed;
+Mat ref_img, sensed_img, warped_img, ref_img_preprocessed, sensed_img_preprocessed;
 bool preprocessing = false;
 
 QWidget *match_widget;
+QWidget *cross_widget;
 QWidget *preprocess_ref_widget;
 QWidget *preprocess_sensed_widget;
 
@@ -42,10 +43,12 @@ QLabel *match_img_pixmap;
 QLabel *preprocess_ref_img_pixmap;
 QLabel *preprocess_sensed_img_pixmap;
 QLabel *sensed_img_pixmap;
+QLabel *cross_img_pixmap;
 
 QComboBox *model_box;
 QComboBox *matching_method_box;
 QPushButton *matches_btn;
+QPushButton *cross_btn;
 QDoubleSpinBox *deriche_gamma;
 
 //------------------------------------------------------------------------------
@@ -129,6 +132,15 @@ void process(const QString &method, const QString &model, const QString &feature
     match_widget->setVisible(false);
     matches_btn->setEnabled(false);
   }
+
+  double alpha = 0.5;
+  double beta = (1.0 - alpha);
+  cv::Mat cross_img;
+  addWeighted(ref_img, alpha, warp_img, beta, 0.0, cross_img);
+  cross_img_pixmap->setPixmap(QPixmap::fromImage(QImage(cross_img.data, cross_img.cols, cross_img.rows, cross_img.step, QImage::Format_RGB888))
+                                  .scaled(size * 3, size * 3, Qt::KeepAspectRatio));
+
+  cross_btn->setEnabled(true);
 
   std::cout << "done" << std::endl;
 }
@@ -416,6 +428,13 @@ int main(int argc, char **argv) {
     toolbar_registration->addWidget(matches_btn);
     matches_btn->setText("Display matches");
     QObject::connect(matches_btn, &QPushButton::clicked, [&]() { match_widget->setVisible(true); });
+    matches_btn->setEnabled(false);
+
+    cross_btn = new QPushButton(toolbar_registration);
+    toolbar_registration->addWidget(cross_btn);
+    cross_btn->setText("Display cross-image");
+    QObject::connect(cross_btn, &QPushButton::clicked, [&]() { cross_widget->setVisible(true); });
+    cross_btn->setEnabled(false);
   }
 
   //----------TOOLBAR PREPROCESS
@@ -493,6 +512,19 @@ int main(int argc, char **argv) {
     match_img_label->setText("Match image (features based methods registration)");
     match_layout->addWidget(match_img_label);
     match_layout->addWidget(match_img_pixmap);
+  }
+
+  //----------CROSS DISSOLVE TO SEE RESULT
+
+  if (!benchmark) {
+    cross_widget = new QWidget();
+    QVBoxLayout *cross_layout = new QVBoxLayout();
+    cross_widget->setLayout(cross_layout);
+    QLabel *cross_img_label = new QLabel(cross_widget);
+    cross_img_pixmap = new QLabel(cross_widget);
+    cross_img_label->setText("Cross image");
+    cross_layout->addWidget(cross_img_label);
+    cross_layout->addWidget(cross_img_pixmap);
   }
 
   //----------PREPROCESSED IMAGE
