@@ -339,7 +339,7 @@ int main(int argc, char **argv) {
 
   bool correlation_is_checked = false;
   bool orb_is_checked = true;
-  bool akaze_is_checked = true;
+  bool akaze_is_checked = false;
   bool fmt_is_checked = true;
   double tr_x = 0;
   double tr_y = 0;
@@ -397,19 +397,19 @@ int main(int argc, char **argv) {
     toolbar_registration->addWidget(orb_btn);
     orb_btn->setText("ORB");
     orb_btn->setChecked(orb_is_checked);
-    QObject::connect(correlation_btn, &QCheckBox::stateChanged, [&](int state) { orb_is_checked = (state == 0) ? false : true; });
+    QObject::connect(orb_btn, &QCheckBox::stateChanged, [&](int state) { orb_is_checked = (state == 0) ? false : true; });
 
     QCheckBox *akaze_btn = new QCheckBox(toolbar_registration);
     toolbar_registration->addWidget(akaze_btn);
     akaze_btn->setText("AKAZE");
     akaze_btn->setChecked(akaze_is_checked);
-    QObject::connect(correlation_btn, &QCheckBox::stateChanged, [&](int state) { akaze_is_checked = (state == 0) ? false : true; });
+    QObject::connect(akaze_btn, &QCheckBox::stateChanged, [&](int state) { akaze_is_checked = (state == 0) ? false : true; });
 
     QCheckBox *fmt_btn = new QCheckBox(toolbar_registration);
     toolbar_registration->addWidget(fmt_btn);
     fmt_btn->setText("Fourier-Mellin");
     fmt_btn->setChecked(fmt_is_checked);
-    QObject::connect(correlation_btn, &QCheckBox::stateChanged, [&](int state) { fmt_is_checked = (state == 0) ? false : true; });
+    QObject::connect(fmt_btn, &QCheckBox::stateChanged, [&](int state) { fmt_is_checked = (state == 0) ? false : true; });
 
     QPushButton *process_btn = new QPushButton(toolbar_registration);
     toolbar_registration->addWidget(process_btn);
