@@ -25,7 +25,7 @@ int main(int argc, const char **argv) {
 
   cv::cvtColor(imgSrc, imgGray, cv::COLOR_RGB2GRAY);
 
-  cv::namedWindow("Canny-Deriche", cv::WINDOW_GUI_NORMAL);
+  cv::namedWindow("Canny-Deriche", cv::WINDOW_NORMAL);
   cv::resizeWindow("Canny-Deriche", 600, 600);
   cv::moveWindow("Canny-Deriche", 100, 100);
 
