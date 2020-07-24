@@ -35,8 +35,8 @@ include(CTest)
 ################################################################################
 #SOURCES
 
-file(GLOB_RECURSE SRC_REGISTRATION "src/Filter/*.cpp" "src/ImageRegistration/*.cpp")
-file(GLOB_RECURSE SRC_EDGE_DETECT "src/Filter/*.cpp" "src/EdgeDetector/*.cpp")
+file(GLOB_RECURSE SRC_REGISTRATION "src/Shared/Filter/*.cpp" "src/ImageRegistration/*.cpp")
+file(GLOB_RECURSE SRC_EDGE_DETECT "src/Shared/Filter/*.cpp" "src/EdgeDetector/*.cpp")
 
 ################################################################################
 #LINK
