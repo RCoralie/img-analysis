@@ -37,6 +37,7 @@ include(CTest)
 
 file(GLOB_RECURSE SRC_REGISTRATION "src/Shared/Filter/*.cpp" "src/ImageRegistration/*.cpp")
 file(GLOB_RECURSE SRC_EDGE_DETECT "src/Shared/Filter/*.cpp" "src/EdgeDetector/*.cpp")
+file(GLOB_RECURSE SRC_SHARED "src/Shared/*.cpp")
 
 ################################################################################
 #LINK
@@ -67,3 +68,6 @@ target_link_libraries(Demo_Registration ${LINK_LIBS})
 
 add_executable(Demo_EdgeDetector ${SRC_EDGE_DETECT} src/Demo_EdgeDetector.cpp)
 target_link_libraries(Demo_EdgeDetector ${LINK_LIBS})
+
+add_executable(Demo_DFT ${SRC_SHARED} src/Demo_DFT.cpp)
+target_link_libraries(Demo_DFT ${LINK_LIBS})
