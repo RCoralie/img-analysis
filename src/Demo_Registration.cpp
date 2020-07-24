@@ -37,6 +37,11 @@ QWidget *match_widget;
 QWidget *cross_widget;
 QWidget *preprocess_ref_widget;
 QWidget *preprocess_sensed_widget;
+QWidget *comparative_widget;
+QWidget *corr_widget;
+QWidget *orb_widget;
+QWidget *akaze_widget;
+QWidget *fmt_widget;
 
 QLabel *warp_img_pixmap;
 QLabel *match_img_pixmap;
@@ -44,6 +49,10 @@ QLabel *preprocess_ref_img_pixmap;
 QLabel *preprocess_sensed_img_pixmap;
 QLabel *sensed_img_pixmap;
 QLabel *cross_img_pixmap;
+QLabel *corr_img_pixmap;
+QLabel *orb_img_pixmap;
+QLabel *akaze_img_pixmap;
+QLabel *fmt_img_pixmap;
 
 QComboBox *model_box;
 QComboBox *matching_method_box;
@@ -151,6 +160,11 @@ void compareShiftRegistration(bool correlation_is_checked, bool orb_is_checked, 
   clock_t t0;
   double duration;
 
+  corr_widget->setVisible(false);
+  orb_widget->setVisible(false);
+  akaze_widget->setVisible(false);
+  fmt_widget->setVisible(false);
+
   if (correlation_is_checked) { // enhancedCorrelationCoefficientMaximization
     Mat corr_translation = enhancedCorrelationCoefficientMaximization(ref_img, sensed_img, MOTION_TRANSLATION);
     cout << "ECC (TRANSLATION MODEL): ---------------------------------" << endl;
@@ -161,6 +175,11 @@ void compareShiftRegistration(bool correlation_is_checked, bool orb_is_checked, 
     }
     duration = ((clock() - t0) / (double)CLOCKS_PER_SEC) / occurrences_nb;
     cout << "mean execution time on " << occurrences_nb << " runs : " << duration << " secondes" << endl;
+
+    corr_widget->setVisible(true);
+    cv::Mat warp_img = imgRegistration(ref_img, sensed_img, corr_translation);
+    corr_img_pixmap->setPixmap(QPixmap::fromImage(QImage(warp_img.data, warp_img.cols, warp_img.rows, warp_img.step, QImage::Format_RGB888))
+                                   .scaled(size, size, Qt::KeepAspectRatio));
   }
 
   if (orb_is_checked) { // Features features methods
@@ -176,6 +195,11 @@ void compareShiftRegistration(bool correlation_is_checked, bool orb_is_checked, 
     }
     duration = ((clock() - t0) / (double)CLOCKS_PER_SEC) / occurrences_nb;
     cout << "mean execution time on " << occurrences_nb << " runs : " << duration << " secondes" << endl;
+
+    orb_widget->setVisible(true);
+    cv::Mat warp_img = imgRegistration(ref_img, sensed_img, tr_orb_rigid);
+    orb_img_pixmap->setPixmap(QPixmap::fromImage(QImage(warp_img.data, warp_img.cols, warp_img.rows, warp_img.step, QImage::Format_RGB888))
+                                  .scaled(size, size, Qt::KeepAspectRatio));
   }
 
   if (akaze_is_checked) { // Features features methods
@@ -191,6 +215,11 @@ void compareShiftRegistration(bool correlation_is_checked, bool orb_is_checked, 
     }
     duration = ((clock() - t0) / (double)CLOCKS_PER_SEC) / occurrences_nb;
     cout << "mean execution time on " << occurrences_nb << " runs : " << duration << " secondes" << endl;
+
+    akaze_widget->setVisible(true);
+    cv::Mat warp_img = imgRegistration(ref_img, sensed_img, tr_akaze_rigid);
+    akaze_img_pixmap->setPixmap(QPixmap::fromImage(QImage(warp_img.data, warp_img.cols, warp_img.rows, warp_img.step, QImage::Format_RGB888))
+                                    .scaled(size, size, Qt::KeepAspectRatio));
   }
 
   if (fmt_is_checked) { // Fourier-mellin transformation
@@ -203,6 +232,11 @@ void compareShiftRegistration(bool correlation_is_checked, bool orb_is_checked, 
     }
     duration = ((clock() - t0) / (double)CLOCKS_PER_SEC) / occurrences_nb;
     cout << "mean execution time on " << occurrences_nb << " runs : " << duration << " secondes" << endl;
+
+    fmt_widget->setVisible(true);
+    cv::Mat warp_img = imgRegistration(ref_img, sensed_img, fmt);
+    fmt_img_pixmap->setPixmap(QPixmap::fromImage(QImage(warp_img.data, warp_img.cols, warp_img.rows, warp_img.step, QImage::Format_RGB888))
+                                  .scaled(size, size, Qt::KeepAspectRatio));
   }
 }
 
@@ -383,6 +417,14 @@ int main(int argc, char **argv) {
     QObject::connect(process_btn, &QPushButton::clicked,
                      [&]() { compareShiftRegistration(correlation_is_checked, orb_is_checked, akaze_is_checked, fmt_is_checked, 100); });
 
+    toolbar_registration->addSeparator();
+
+    QPushButton *result_btn = new QPushButton(toolbar_registration);
+    toolbar_registration->addWidget(result_btn);
+    result_btn->setText("Display results");
+    QObject::connect(result_btn, &QPushButton::clicked, [&]() { comparative_widget->setVisible(true); });
+    result_btn->setEnabled(true);
+
   } else {
     QComboBox *registration_algo_box = new QComboBox(toolbar_registration);
     toolbar_registration->addWidget(registration_algo_box);
@@ -499,6 +541,54 @@ int main(int argc, char **argv) {
     warp_layout->addWidget(warp_img_label);
     warp_layout->addWidget(warp_img_pixmap);
     main_layout->addWidget(warp_widget, 0, 2, 2, 2);
+  }
+
+  //----------DISPLAY REGISTRATION METHODS COMPARAISON
+
+  if (benchmark) {
+    comparative_widget = new QWidget();
+    QHBoxLayout *comparative_layout = new QHBoxLayout();
+    comparative_widget->setLayout(comparative_layout);
+
+    corr_widget = new QWidget(comparative_widget);
+    QVBoxLayout *corr_layout = new QVBoxLayout();
+    corr_widget->setLayout(corr_layout);
+    QLabel *corr_img_label = new QLabel(corr_widget);
+    corr_img_label->setText("Correlation");
+    corr_layout->addWidget(corr_img_label);
+    corr_img_pixmap = new QLabel(corr_widget);
+    corr_layout->addWidget(corr_img_pixmap);
+    comparative_layout->addWidget(corr_widget);
+
+    orb_widget = new QWidget(comparative_widget);
+    QVBoxLayout *orb_layout = new QVBoxLayout();
+    orb_widget->setLayout(orb_layout);
+    QLabel *orb_img_label = new QLabel(orb_widget);
+    orb_img_label->setText("ORB");
+    orb_layout->addWidget(orb_img_label);
+    orb_img_pixmap = new QLabel(orb_widget);
+    orb_layout->addWidget(orb_img_pixmap);
+    comparative_layout->addWidget(orb_widget);
+
+    akaze_widget = new QWidget(comparative_widget);
+    QVBoxLayout *akaze_layout = new QVBoxLayout();
+    akaze_widget->setLayout(akaze_layout);
+    QLabel *akaze_img_label = new QLabel(akaze_widget);
+    akaze_img_label->setText("AKAZE");
+    akaze_layout->addWidget(akaze_img_label);
+    akaze_img_pixmap = new QLabel(akaze_widget);
+    akaze_layout->addWidget(akaze_img_pixmap);
+    comparative_layout->addWidget(akaze_widget);
+
+    fmt_widget = new QWidget(comparative_widget);
+    QVBoxLayout *fmt_layout = new QVBoxLayout();
+    fmt_widget->setLayout(fmt_layout);
+    QLabel *fmt_img_label = new QLabel(fmt_widget);
+    fmt_img_label->setText("Fourier-Mellin");
+    fmt_layout->addWidget(fmt_img_label);
+    fmt_img_pixmap = new QLabel(fmt_widget);
+    fmt_layout->addWidget(fmt_img_pixmap);
+    comparative_layout->addWidget(fmt_widget);
   }
 
   //----------MATCH IMAGE FOR FEATURES BASED REGISTRATION ONLY
