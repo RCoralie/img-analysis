@@ -1,3 +1,4 @@
+#include "ROIView.hpp"
 #include "edgedetect.hpp"
 #include "registration.hpp"
 #include "tools.hpp"
@@ -18,6 +19,7 @@
 #include <boost/program_options.hpp>
 #include <boost/regex.hpp>
 #include <iostream>
+#include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/opencv.hpp>
 
@@ -30,9 +32,9 @@ using namespace registration::corr;
 using namespace boost::program_options;
 using namespace transform_mat;
 
-const int size = 400;
+const int scaling_rect_size = 400;
 
-Mat ref_img, sensed_img, warped_img, ref_img_preprocessed, sensed_img_preprocessed;
+Mat ref_img, sensed_img, warped_img, ref_img_preprocessed, sensed_img_preprocessed, mask;
 bool preprocessing = false;
 
 QWidget *match_widget;
@@ -75,13 +77,22 @@ void preprocess() {
   if (preprocessing) {
     DericheGradient(ref_img_preprocessed, ref_img_preprocessed, deriche_gamma->value());
     DericheGradient(sensed_img_preprocessed, sensed_img_preprocessed, deriche_gamma->value());
+
+    cv::Mat ref_img_masked;
+    if (mask.empty()) {
+      ref_img_masked = ref_img_preprocessed.clone();
+    } else {
+      ref_img_preprocessed.copyTo(ref_img_masked, mask);
+    }
+    ref_img_preprocessed = ref_img_masked.clone();
+
     preprocess_ref_img_pixmap->setPixmap(QPixmap::fromImage(QImage(ref_img_preprocessed.data, ref_img_preprocessed.cols, ref_img_preprocessed.rows,
                                                                    ref_img_preprocessed.step, QImage::Format_RGB888))
-                                             .scaled(size, size, Qt::KeepAspectRatio));
+                                             .scaled(scaling_rect_size, scaling_rect_size, Qt::KeepAspectRatio));
     preprocess_sensed_img_pixmap->setPixmap(
         QPixmap::fromImage(QImage(sensed_img_preprocessed.data, sensed_img_preprocessed.cols, sensed_img_preprocessed.rows,
                                   sensed_img_preprocessed.step, QImage::Format_RGB888))
-            .scaled(size, size, Qt::KeepAspectRatio));
+            .scaled(scaling_rect_size, scaling_rect_size, Qt::KeepAspectRatio));
   }
 }
 
@@ -132,12 +143,12 @@ void process(const QString &method, const QString &model, const QString &feature
   }
   // cvtColor(warp_img, warp_img, COLOR_BGR2RGB);
   warp_img_pixmap->setPixmap(QPixmap::fromImage(QImage(warp_img.data, warp_img.cols, warp_img.rows, warp_img.step, QImage::Format_RGB888))
-                                 .scaled(size * 2 + 100, size * 2 + 100, Qt::KeepAspectRatio));
+                                 .scaled(scaling_rect_size * 2 + 100, scaling_rect_size * 2 + 100, Qt::KeepAspectRatio));
 
   if (!match_img.empty()) {
     // cvtColor(match_img, match_img, COLOR_BGR2RGB);
     match_img_pixmap->setPixmap(QPixmap::fromImage(QImage(match_img.data, match_img.cols, match_img.rows, match_img.step, QImage::Format_RGB888))
-                                    .scaled(size * 4, size * 2, Qt::KeepAspectRatio));
+                                    .scaled(scaling_rect_size * 4, scaling_rect_size * 2, Qt::KeepAspectRatio));
     matches_btn->setEnabled(true);
   } else {
     match_widget->setVisible(false);
@@ -149,7 +160,7 @@ void process(const QString &method, const QString &model, const QString &feature
   cv::Mat cross_img;
   addWeighted(ref_img, alpha, warp_img, beta, 0.0, cross_img);
   cross_img_pixmap->setPixmap(QPixmap::fromImage(QImage(cross_img.data, cross_img.cols, cross_img.rows, cross_img.step, QImage::Format_RGB888))
-                                  .scaled(size * 3, size * 3, Qt::KeepAspectRatio));
+                                  .scaled(scaling_rect_size * 3, scaling_rect_size * 3, Qt::KeepAspectRatio));
 
   cross_btn->setEnabled(true);
 
@@ -181,7 +192,7 @@ void compareShiftRegistration(bool correlation_is_checked, bool orb_is_checked, 
     corr_widget->setVisible(true);
     cv::Mat warp_img = imgRegistration(ref_img, sensed_img, corr_translation);
     corr_img_pixmap->setPixmap(QPixmap::fromImage(QImage(warp_img.data, warp_img.cols, warp_img.rows, warp_img.step, QImage::Format_RGB888))
-                                   .scaled(size, size, Qt::KeepAspectRatio));
+                                   .scaled(scaling_rect_size, scaling_rect_size, Qt::KeepAspectRatio));
   }
 
   if (orb_is_checked) { // Features features methods
@@ -201,7 +212,7 @@ void compareShiftRegistration(bool correlation_is_checked, bool orb_is_checked, 
     orb_widget->setVisible(true);
     cv::Mat warp_img = imgRegistration(ref_img, sensed_img, tr_orb_rigid);
     orb_img_pixmap->setPixmap(QPixmap::fromImage(QImage(warp_img.data, warp_img.cols, warp_img.rows, warp_img.step, QImage::Format_RGB888))
-                                  .scaled(size, size, Qt::KeepAspectRatio));
+                                  .scaled(scaling_rect_size, scaling_rect_size, Qt::KeepAspectRatio));
   }
 
   if (akaze_is_checked) { // Features features methods
@@ -221,7 +232,7 @@ void compareShiftRegistration(bool correlation_is_checked, bool orb_is_checked, 
     akaze_widget->setVisible(true);
     cv::Mat warp_img = imgRegistration(ref_img, sensed_img, tr_akaze_rigid);
     akaze_img_pixmap->setPixmap(QPixmap::fromImage(QImage(warp_img.data, warp_img.cols, warp_img.rows, warp_img.step, QImage::Format_RGB888))
-                                    .scaled(size, size, Qt::KeepAspectRatio));
+                                    .scaled(scaling_rect_size, scaling_rect_size, Qt::KeepAspectRatio));
   }
 
   if (fmt_is_checked) { // Fourier-mellin transformation
@@ -238,7 +249,7 @@ void compareShiftRegistration(bool correlation_is_checked, bool orb_is_checked, 
     fmt_widget->setVisible(true);
     cv::Mat warp_img = imgRegistration(ref_img, sensed_img, fmt);
     fmt_img_pixmap->setPixmap(QPixmap::fromImage(QImage(warp_img.data, warp_img.cols, warp_img.rows, warp_img.step, QImage::Format_RGB888))
-                                  .scaled(size, size, Qt::KeepAspectRatio));
+                                  .scaled(scaling_rect_size, scaling_rect_size, Qt::KeepAspectRatio));
   }
 }
 
@@ -248,7 +259,7 @@ void shift(const cv::Mat &img, cv::Mat &img_shifted, double x, double y) {
   cv::warpAffine(img, img_shifted, M, img.size(), INTER_LINEAR, BORDER_REPLICATE);
   sensed_img_pixmap->setPixmap(
       QPixmap::fromImage(QImage(img_shifted.data, img_shifted.cols, img_shifted.rows, img_shifted.step, QImage::Format_RGB888))
-          .scaled(size, size, Qt::KeepAspectRatio));
+          .scaled(scaling_rect_size, scaling_rect_size, Qt::KeepAspectRatio));
 }
 
 //------------------------------------------------------------------------------
@@ -510,14 +521,24 @@ int main(int argc, char **argv) {
   QVBoxLayout *ref_layout = new QVBoxLayout();
   reference_widget->setLayout(ref_layout);
   QLabel *ref_img_label = new QLabel(reference_widget);
-  QLabel *ref_img_pixmap = new QLabel(reference_widget);
+  ROIView *ref_img_pixmap = new ROIView(reference_widget);
   ref_img_label->setText("Reference image");
   cvtColor(ref_img, ref_img, COLOR_BGR2RGB);
   ref_img_pixmap->setPixmap(QPixmap::fromImage(QImage(ref_img.data, ref_img.cols, ref_img.rows, ref_img.step, QImage::Format_RGB888))
-                                .scaled(size, size, Qt::KeepAspectRatio));
+                                .scaled(scaling_rect_size, scaling_rect_size, Qt::KeepAspectRatio));
   ref_layout->addWidget(ref_img_label);
   ref_layout->addWidget(ref_img_pixmap);
   main_layout->addWidget(reference_widget, 0, 0);
+  QObject::connect(ref_img_pixmap, &ROIView::ROIChanged, [&](QRect rect) {
+    double ratio = (ref_img.cols > ref_img.rows) ? ref_img.cols / (double)scaling_rect_size : ref_img.rows / (double)scaling_rect_size;
+    cv::Point topLeft = cv::Point(rect.topLeft().x() * ratio, rect.topLeft().y() * ratio);
+    cv::Point bottomRight = cv::Point(rect.bottomRight().x() * ratio, rect.bottomRight().y() * ratio);
+    mask = cv::Mat::zeros(ref_img.rows, ref_img.cols, CV_8U);
+    mask(Rect(topLeft, bottomRight)) = 1;
+    if (preprocessing) {
+      preprocess();
+    }
+  });
 
   QWidget *sensed_widget = new QWidget(main_widget);
   QVBoxLayout *sensed_layout = new QVBoxLayout();
@@ -527,7 +548,7 @@ int main(int argc, char **argv) {
   sensed_img_label->setText("Sensed image");
   cvtColor(sensed_img, sensed_img, COLOR_BGR2RGB);
   sensed_img_pixmap->setPixmap(QPixmap::fromImage(QImage(sensed_img.data, sensed_img.cols, sensed_img.rows, sensed_img.step, QImage::Format_RGB888))
-                                   .scaled(size, size, Qt::KeepAspectRatio));
+                                   .scaled(scaling_rect_size, scaling_rect_size, Qt::KeepAspectRatio));
   sensed_layout->addWidget(sensed_img_label);
   sensed_layout->addWidget(sensed_img_pixmap);
   main_layout->addWidget(sensed_widget, 0, 1);
