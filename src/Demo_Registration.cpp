@@ -254,6 +254,19 @@ void compareShiftRegistration(bool correlation_is_checked, bool orb_is_checked, 
 }
 
 //------------------------------------------------------------------------------
+void updateROI(QRect rect) {
+  if (rect.height() == 1) {
+    mask = cv::Mat::ones(ref_img.rows, ref_img.cols, CV_8U);
+    return;
+  }
+  double ratio = (ref_img.cols > ref_img.rows) ? ref_img.cols / (double)scaling_rect_size : ref_img.rows / (double)scaling_rect_size;
+  cv::Point topLeft = cv::Point(rect.topLeft().x() * ratio, rect.topLeft().y() * ratio);
+  cv::Point bottomRight = cv::Point(rect.bottomRight().x() * ratio, rect.bottomRight().y() * ratio);
+  mask = cv::Mat::zeros(ref_img.rows, ref_img.cols, CV_8U);
+  mask(Rect(topLeft, bottomRight)) = 1;
+}
+
+//------------------------------------------------------------------------------
 void shift(const cv::Mat &img, cv::Mat &img_shifted, double x, double y) {
   cv::Mat M = (cv::Mat_<double>(2, 3) << 1, 0, x, 0, 1, y);
   cv::warpAffine(img, img_shifted, M, img.size(), INTER_LINEAR, BORDER_REPLICATE);
@@ -530,11 +543,7 @@ int main(int argc, char **argv) {
   ref_layout->addWidget(ref_img_pixmap);
   main_layout->addWidget(reference_widget, 0, 0);
   QObject::connect(ref_img_pixmap, &ROIView::ROIChanged, [&](QRect rect) {
-    double ratio = (ref_img.cols > ref_img.rows) ? ref_img.cols / (double)scaling_rect_size : ref_img.rows / (double)scaling_rect_size;
-    cv::Point topLeft = cv::Point(rect.topLeft().x() * ratio, rect.topLeft().y() * ratio);
-    cv::Point bottomRight = cv::Point(rect.bottomRight().x() * ratio, rect.bottomRight().y() * ratio);
-    mask = cv::Mat::zeros(ref_img.rows, ref_img.cols, CV_8U);
-    mask(Rect(topLeft, bottomRight)) = 1;
+    updateROI(rect);
     if (preprocessing) {
       preprocess();
     }
