@@ -1,10 +1,11 @@
 cmake_minimum_required(VERSION 3.12)
 project(ImageAnalysis)
 
-
 add_definitions("-std=c++11")
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS "ON")
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup()
@@ -26,6 +27,7 @@ include_directories(
     ${Boost_INCLUDE_DIRS}
     ${YAML_CPP_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/include
+    ${CMAKE_SOURCE_DIR}/src/gui
     /opt/include/opencv4/
     ${Qt5Widgets_INCLUDE_DIRS}
 )
@@ -38,6 +40,7 @@ include(CTest)
 file(GLOB_RECURSE SRC_REGISTRATION "src/Shared/Filter/*.cpp" "src/ImageRegistration/*.cpp")
 file(GLOB_RECURSE SRC_EDGE_DETECT "src/Shared/Filter/*.cpp" "src/EdgeDetector/*.cpp")
 file(GLOB_RECURSE SRC_SHARED "src/Shared/*.cpp")
+file(GLOB_RECURSE SRC_GUI "src/gui/*.cpp")
 
 ################################################################################
 #LINK
@@ -60,10 +63,11 @@ LIST(APPEND LINK_TEST_LIBS
 
 link_libraries(stdc++fs)
 
+
 ################################################################################
 #EXECUTABLE
 #
-add_executable(Demo_Registration ${SRC_SHARED} ${SRC_REGISTRATION} ${SRC_EDGE_DETECT} src/Demo_Registration.cpp)
+add_executable(Demo_Registration ${SRC_GUI} ${SRC_SHARED} ${SRC_REGISTRATION} ${SRC_EDGE_DETECT} src/Demo_Registration.cpp)
 target_link_libraries(Demo_Registration ${LINK_LIBS})
 
 add_executable(Demo_EdgeDetector ${SRC_EDGE_DETECT} src/Demo_EdgeDetector.cpp)
